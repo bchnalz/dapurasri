@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* Warm teal/emerald theme – Dapurasri */
+@theme {
+  --color-background: hsl(40 20% 98%);
+  --color-foreground: hsl(180 15% 15%);
+  --color-primary: hsl(168 76% 36%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(168 45% 92%);
+  --color-secondary-foreground: hsl(168 60% 20%);
+  --color-muted: hsl(168 25% 94%);
+  --color-muted-foreground: hsl(180 10% 42%);
+  --color-accent: hsl(168 50% 88%);
+  --color-accent-foreground: hsl(168 60% 18%);
+  --color-destructive: hsl(0 72% 48%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(168 20% 88%);
+  --color-input: hsl(168 20% 90%);
+  --color-ring: hsl(168 76% 36%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(180 15% 15%);
+}
+
+html {
+  font-size: 15px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Themed table headers */
+[data-theme-table] thead tr {
+  background: hsl(168 45% 92%);
+  color: hsl(168 60% 20%);
+}
+[data-theme-table] tbody tr:hover {
+  background: hsl(168 30% 96%);
+}

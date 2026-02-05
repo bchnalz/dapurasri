@@ -100,6 +100,7 @@ ROUTING STRUCTURE:
 UI/UX REQUIREMENTS:
 - Responsive design (mobile-friendly)
 - Modern and clean interface
+- Smooth entrance of dialog boxes
 - Loading states on every action
 - Toast notifications for success/error
 - Confirmation dialog before delete

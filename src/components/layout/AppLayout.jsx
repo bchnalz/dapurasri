@@ -11,7 +11,8 @@ const nav = [
   { to: '/master/categories', label: 'Kategori Pembelian', icon: FolderTree },
   { to: '/master/payment-methods', label: 'Metode Pembayaran', icon: CreditCard },
   { to: '/transactions', label: 'Transaksi', icon: Receipt },
-  { to: '/reports', label: 'Laporan', icon: FileText },
+  { to: '/reports/sales', label: 'Laporan Penjualan', icon: FileText },
+  { to: '/reports/expenses', label: 'Laporan Pengeluaran', icon: FileText },
 ]
 
 function SidebarContent({ onNavigate, className }) {

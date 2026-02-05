@@ -79,3 +79,31 @@ create policy "Authenticated full access on sales_details"
 
 create policy "Authenticated full access on purchase_transactions"
   on public.purchase_transactions for all to authenticated using (true) with check (true);
+
+-- Generate unique sales transaction number (INV-YYYYMMDD-NNN). Required for saving new pemasukan.
+create or replace function public.generate_sales_transaction_no(p_txn_date date)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  lock_key bigint;
+  prefix text;
+  max_num int;
+  next_num int;
+begin
+  prefix := 'INV-' || to_char(p_txn_date, 'YYYYMMDD') || '-';
+  lock_key := 10000000000::bigint + (to_char(p_txn_date, 'YYYYMMDD')::bigint);
+  perform pg_advisory_xact_lock(lock_key);
+  select coalesce(max((regexp_match(transaction_no, '[0-9]+$'))[1]::int), 0) into max_num
+  from public.sales_transactions
+  where transaction_no like prefix || '%' and transaction_no ~ ('^INV-[0-9]{8}-[0-9]+$');
+  next_num := max_num + 1;
+  return prefix || lpad(next_num::text, 3, '0');
+end;
+$$;
+comment on function public.generate_sales_transaction_no(date) is
+  'Returns next unique sales transaction number for the given date. Uses advisory lock to avoid duplicates under concurrency.';
+grant execute on function public.generate_sales_transaction_no(date) to authenticated;
+grant execute on function public.generate_sales_transaction_no(date) to service_role;

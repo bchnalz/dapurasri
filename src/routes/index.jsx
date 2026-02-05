@@ -9,6 +9,8 @@ import Categories from '@/pages/master/Categories'
 import PaymentMethods from '@/pages/master/PaymentMethods'
 import Transactions from '@/pages/Transactions'
 import Reports from '@/pages/Reports'
+import SalesReports from '@/pages/reports/SalesReports'
+import ExpenseReports from '@/pages/reports/ExpenseReports'
 
 function RootLayout() {
   return (
@@ -38,7 +40,10 @@ export const router = createBrowserRouter([
           { path: 'master/categories', element: <Categories /> },
           { path: 'master/payment-methods', element: <PaymentMethods /> },
           { path: 'transactions', element: <Transactions /> },
+          // Backward-compatible entrypoint (redirect / landing)
           { path: 'reports', element: <Reports /> },
+          { path: 'reports/sales', element: <SalesReports /> },
+          { path: 'reports/expenses', element: <ExpenseReports /> },
         ],
       },
     ],

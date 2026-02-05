@@ -65,6 +65,17 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
     }
   }, [open, editingRow?.id])
 
+  useEffect(() => {
+    if (open && !editingRow && categories.length > 0 && !currentCategoryId) {
+      const belanjaBahan = categories.find(
+        (c) => String(c.name).trim().toLowerCase() === 'belanja bahan'
+      )
+      if (belanjaBahan) {
+        setCurrentCategoryId(belanjaBahan.id)
+      }
+    }
+  }, [open, editingRow, categories, currentCategoryId])
+
   async function loadCategories() {
     setLoadingCategories(true)
     const { data, error } = await supabase

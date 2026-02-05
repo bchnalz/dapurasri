@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
-import { ShoppingCart, ShoppingBag } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
-import { cn } from '@/lib/utils'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
-  const [salesTotal, setSalesTotal] = useState(0)
-  const [purchasesTotal, setPurchasesTotal] = useState(0)
-  const [salesPrev, setSalesPrev] = useState(0)
-  const [purchasesPrev, setPurchasesPrev] = useState(0)
+  const [monthlySummaries, setMonthlySummaries] = useState([])
 
   useEffect(() => {
     loadStats()
@@ -26,73 +21,103 @@ export default function Dashboard() {
 
   async function loadStats() {
     setLoading(true)
-    const now = new Date()
-    const start = toLocalDateString(startOfMonth(now))
-    const end = toLocalDateString(endOfMonth(now))
-    const prevMonth = subMonths(now, 1)
-    const startPrev = toLocalDateString(startOfMonth(prevMonth))
-    const endPrev = toLocalDateString(endOfMonth(prevMonth))
 
-    const [salesHeadersRes, purchasesRes, salesHeadersPrevRes, purchasesPrevRes] = await Promise.all([
+    // Only show months in 2026 (Jan–Dec)
+    const year = 2026
+    const months = Array.from({ length: 12 }, (_, i) => new Date(year, i, 1))
+    const rangeStartDate = new Date(year, 0, 1)
+    const rangeEndDate = new Date(year, 11, 31)
+
+    const rangeStart = toLocalDateString(rangeStartDate)
+    const rangeEnd = toLocalDateString(rangeEndDate)
+
+    const [salesHeadersRes, purchasesRes] = await Promise.all([
       supabase
         .from('sales_transactions')
-        .select('id')
-        .gte('transaction_date', start)
-        .lte('transaction_date', end),
+        .select('id, transaction_date')
+        .gte('transaction_date', rangeStart)
+        .lte('transaction_date', rangeEnd),
       supabase
         .from('purchase_transactions')
-        .select('amount')
-        .gte('transaction_date', start)
-        .lte('transaction_date', end),
-      supabase
-        .from('sales_transactions')
-        .select('id')
-        .gte('transaction_date', startPrev)
-        .lte('transaction_date', endPrev),
-      supabase
-        .from('purchase_transactions')
-        .select('amount')
-        .gte('transaction_date', startPrev)
-        .lte('transaction_date', endPrev),
+        .select('amount, transaction_date')
+        .gte('transaction_date', rangeStart)
+        .lte('transaction_date', rangeEnd),
     ])
 
-    let salesSum = 0
-    if (!salesHeadersRes.error && salesHeadersRes.data?.length) {
-      const ids = salesHeadersRes.data.map((r) => r.id).filter(Boolean)
-      if (ids.length) {
-        const { data: details } = await supabase
-          .from('sales_details')
-          .select('subtotal')
-          .in('sales_transaction_id', ids)
-        salesSum = (details ?? []).reduce((sum, r) => sum + Number(r.subtotal ?? 0), 0)
+    const salesHeaders = salesHeadersRes.error ? [] : salesHeadersRes.data ?? []
+    const purchases = purchasesRes.error ? [] : purchasesRes.data ?? []
+
+    const salesIds = salesHeaders.map((r) => r.id).filter(Boolean)
+    const idToMonthKey = new Map()
+    for (const row of salesHeaders) {
+      if (!row?.id || !row?.transaction_date) continue
+      // transaction_date is DATE (YYYY-MM-DD) -> month key YYYY-MM
+      idToMonthKey.set(row.id, String(row.transaction_date).slice(0, 7))
+    }
+
+    const monthToSalesTotal = new Map()
+    const monthToProducts = new Map() // monthKey -> Map(product_id -> { product_id, name, units })
+
+    if (salesIds.length) {
+      const { data: details, error: detailsError } = await supabase
+        .from('sales_details')
+        .select('sales_transaction_id, subtotal, quantity, product_id, products(name)')
+        .in('sales_transaction_id', salesIds)
+
+      if (!detailsError) {
+        for (const row of details ?? []) {
+          const monthKey = idToMonthKey.get(row.sales_transaction_id)
+          if (!monthKey) continue
+
+          // Sales total (Rp)
+          monthToSalesTotal.set(
+            monthKey,
+            (monthToSalesTotal.get(monthKey) ?? 0) + Number(row.subtotal ?? 0)
+          )
+
+          // Per-product units sold
+          const pid = row.product_id
+          if (!pid) continue
+          const productsMap = monthToProducts.get(monthKey) ?? new Map()
+          const prev = productsMap.get(pid) ?? { product_id: pid, name: '-', units: 0 }
+          const name = row.products?.name ?? prev.name ?? '-'
+          productsMap.set(pid, { product_id: pid, name, units: prev.units + Number(row.quantity ?? 0) })
+          monthToProducts.set(monthKey, productsMap)
+        }
       }
     }
-    setSalesTotal(salesSum)
 
-    if (purchasesRes.error) setPurchasesTotal(0)
-    else setPurchasesTotal((purchasesRes.data ?? []).reduce((sum, r) => sum + Number(r.amount ?? 0), 0))
-
-    let salesPrevSum = 0
-    if (!salesHeadersPrevRes.error && salesHeadersPrevRes.data?.length) {
-      const idsPrev = salesHeadersPrevRes.data.map((r) => r.id).filter(Boolean)
-      if (idsPrev.length) {
-        const { data: detailsPrev } = await supabase
-          .from('sales_details')
-          .select('subtotal')
-          .in('sales_transaction_id', idsPrev)
-        salesPrevSum = (detailsPrev ?? []).reduce((sum, r) => sum + Number(r.subtotal ?? 0), 0)
-      }
+    const monthToPurchasesTotal = new Map()
+    for (const row of purchases) {
+      if (!row?.transaction_date) continue
+      const monthKey = String(row.transaction_date).slice(0, 7)
+      monthToPurchasesTotal.set(
+        monthKey,
+        (monthToPurchasesTotal.get(monthKey) ?? 0) + Number(row.amount ?? 0)
+      )
     }
-    setSalesPrev(salesPrevSum)
 
-    if (purchasesPrevRes.error) setPurchasesPrev(0)
-    else setPurchasesPrev((purchasesPrevRes.data ?? []).reduce((sum, r) => sum + Number(r.amount ?? 0), 0))
+    const summaries = months
+      .map((m) => {
+        const monthKey = format(m, 'yyyy-MM')
+        const label = format(m, 'MMMM yyyy', { locale: id })
+        const productMap = monthToProducts.get(monthKey) ?? new Map()
+        const products = Array.from(productMap.values()).sort((a, b) => Number(b.units) - Number(a.units))
+
+        return {
+          monthKey,
+          label,
+          salesTotal: monthToSalesTotal.get(monthKey) ?? 0,
+          purchasesTotal: monthToPurchasesTotal.get(monthKey) ?? 0,
+          products,
+        }
+      })
+      .filter((m) => m.salesTotal > 0 || m.purchasesTotal > 0)
+
+    setMonthlySummaries(summaries)
 
     setLoading(false)
   }
-
-  const monthLabel = format(new Date(), 'MMMM yyyy', { locale: id })
-  const prevMonthLabel = format(subMonths(new Date(), 1), 'MMMM yyyy', { locale: id })
 
   if (loading) {
     return (
@@ -103,82 +128,48 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <section>
-        <p className="text-muted-foreground mb-4">{monthLabel}</p>
-        <div className="grid gap-4 md:grid-cols-2 max-w-2xl">
-          <div
-            className={cn(
-              'rounded-xl border-2 border-primary/20 bg-card p-6 shadow-md shadow-primary/5',
-              'flex items-center gap-4'
-            )}
-          >
-            <div className="rounded-xl bg-primary/15 p-3">
-              <ShoppingCart className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Penjualan bulan ini</p>
-              <p className="text-2xl font-semibold text-foreground">
-                Rp {(Number(salesTotal) || 0).toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
-          <div
-            className={cn(
-              'rounded-xl border-2 border-secondary-foreground/20 bg-card p-6 shadow-md',
-              'flex items-center gap-4'
-            )}
-          >
-            <div className="rounded-xl bg-secondary p-3">
-              <ShoppingBag className="h-6 w-6 text-secondary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pembelian bulan ini</p>
-              <p className="text-2xl font-semibold text-foreground">
-                Rp {(Number(purchasesTotal) || 0).toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div>
+      {monthlySummaries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Belum ada transaksi di tahun ini.</p>
+      ) : (
+        <div className="flex flex-wrap gap-4 items-start">
+          {monthlySummaries.map((m) => (
+            <div key={m.monthKey} className="w-[16rem]">
+              <div className="rounded-xl border bg-card px-3 py-2 space-y-2">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">{m.label}</p>
+                  <div className="text-sm text-foreground/90 space-y-1">
+                    <p>
+                      <span className="text-muted-foreground">Penjualan:</span>{' '}
+                      Rp {(Number(m.salesTotal) || 0).toLocaleString('id-ID')}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Pengeluaran:</span>{' '}
+                      Rp {(Number(m.purchasesTotal) || 0).toLocaleString('id-ID')}
+                    </p>
+                  </div>
+                </div>
 
-      <section>
-        <p className="text-muted-foreground mb-4">{prevMonthLabel}</p>
-        <div className="grid gap-4 md:grid-cols-2 max-w-2xl">
-          <div
-            className={cn(
-              'rounded-xl border border-border bg-card p-6 shadow-sm',
-              'flex items-center gap-4'
-            )}
-          >
-            <div className="rounded-xl bg-muted p-3">
-              <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Item terjual</p>
+                  {m.products.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">-</p>
+                  ) : (
+                    <ul className="list-disc pl-5 text-sm text-foreground/90 space-y-1">
+                      {m.products.map((row) => (
+                        <li key={row.product_id}>
+                          {row.name} ={' '}
+                          {(Number(row.units) || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Penjualan {prevMonthLabel}</p>
-              <p className="text-2xl font-semibold text-foreground">
-                Rp {(Number(salesPrev) || 0).toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
-          <div
-            className={cn(
-              'rounded-xl border border-border bg-card p-6 shadow-sm',
-              'flex items-center gap-4'
-            )}
-          >
-            <div className="rounded-xl bg-muted p-3">
-              <ShoppingBag className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pembelian {prevMonthLabel}</p>
-              <p className="text-2xl font-semibold text-foreground">
-                Rp {(Number(purchasesPrev) || 0).toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
+      )}
     </div>
   )
 }

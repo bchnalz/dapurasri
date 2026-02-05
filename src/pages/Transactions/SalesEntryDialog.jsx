@@ -184,7 +184,7 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
                   <Input
                     type="number"
                     inputMode="decimal"
-                    step="0.001"
+                    step="1"
                     min="0"
                     value={currentQuantity}
                     onChange={(e) => setCurrentQuantity(e.target.value)}

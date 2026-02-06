@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SalesTable } from './Transactions/SalesTable'
 import { PurchaseTable } from './Transactions/PurchaseTable'
@@ -8,6 +8,7 @@ import { SalesInvoicePreviewDialog } from './Transactions/SalesInvoicePreviewDia
 import { SalesDetailDialog } from './Transactions/SalesDetailDialog'
 import { PurchaseEntryDialog } from './Transactions/PurchaseEntryDialog'
 import { PurchaseDetailDialog } from './Transactions/PurchaseDetailDialog'
+import { CustomInvoiceDialog } from './Transactions/CustomInvoiceDialog'
 
 export default function Transactions() {
   const [refreshKey, setRefreshKey] = useState(0)
@@ -20,6 +21,8 @@ export default function Transactions() {
   const [purchaseEntryOpen, setPurchaseEntryOpen] = useState(false)
   const [editingPurchase, setEditingPurchase] = useState(null)
   const [detailPurchaseId, setDetailPurchaseId] = useState(null)
+  const [customInvoiceOpen, setCustomInvoiceOpen] = useState(false)
+  const [customInvoiceReturnPayload, setCustomInvoiceReturnPayload] = useState(null)
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
@@ -71,6 +74,23 @@ export default function Transactions() {
     refresh()
   }
 
+  function openCustomInvoice() {
+    setCustomInvoiceOpen(true)
+  }
+
+  function onCustomInvoiceGenerateInvoice(payload) {
+    setCustomInvoiceOpen(false)
+    setSalesPreviewPayload(payload)
+    setSalesPreviewOpen(true)
+  }
+
+  function onCustomInvoicePreviewBack() {
+    if (!salesPreviewPayload?.isCustomInvoice) return
+    setSalesPreviewOpen(false)
+    setCustomInvoiceReturnPayload(salesPreviewPayload)
+    setCustomInvoiceOpen(true)
+  }
+
   return (
     <div>
       <div className="grid gap-6 lg:grid-cols-2">
@@ -84,6 +104,15 @@ export default function Transactions() {
               aria-label="Tambah pemasukan"
             >
               <Plus className="h-2.5 w-2.5" />
+            </Button>
+            <Button
+              size="icon"
+              onClick={openCustomInvoice}
+              className="h-5 w-5 min-w-[1.25rem] p-0 bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+              aria-label="Custom Invoice"
+              title="Custom Invoice"
+            >
+              <Copy className="h-2.5 w-2.5" />
             </Button>
           </div>
           <SalesTable
@@ -127,7 +156,17 @@ export default function Transactions() {
         onOpenChange={setSalesPreviewOpen}
         payload={salesPreviewPayload}
         onSuccess={onSalesConfirm}
-        onBack={onSalesPreviewBack}
+        onBack={salesPreviewPayload?.isCustomInvoice ? onCustomInvoicePreviewBack : onSalesPreviewBack}
+      />
+      <CustomInvoiceDialog
+        open={customInvoiceOpen}
+        onOpenChange={(open) => {
+          setCustomInvoiceOpen(open)
+          if (!open) setCustomInvoiceReturnPayload(null)
+        }}
+        returnPayload={customInvoiceReturnPayload}
+        onConsumeReturnPayload={() => setCustomInvoiceReturnPayload(null)}
+        onSuccess={onCustomInvoiceGenerateInvoice}
       />
       <PurchaseEntryDialog
         open={purchaseEntryOpen}

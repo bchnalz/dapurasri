@@ -19,6 +19,8 @@
   --color-ring: hsl(168 76% 36%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(180 15% 15%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(180 15% 15%);
 }
 
 html {
@@ -41,4 +43,10 @@ body {
 }
 [data-theme-table] tbody tr:hover {
   background: hsl(168 30% 96%);
+}
+
+/* Calendar day picker reset */
+.rdp-root {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: var(--color-accent);
 }

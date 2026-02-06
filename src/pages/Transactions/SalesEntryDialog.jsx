@@ -4,7 +4,14 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -130,7 +137,7 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" compact>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto" compact>
         <DialogHeader>
           <DialogTitle>
             {editingTransaction ? 'Edit Penjualan' : 'Entri Penjualan Baru'}
@@ -143,25 +150,23 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
         ) : (
           <>
             <div className="flex items-center gap-3">
-              <Input
-                id="tx-date"
-                type="date"
+              <DatePicker
                 value={transactionDate}
-                onChange={(e) => setTransactionDate(e.target.value)}
-                className="flex-1 min-w-[140px] text-sm pl-2 pr-8 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:ml-0 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                onChange={setTransactionDate}
+                placeholder="Pilih tanggal"
+                className="flex-1 min-w-[140px]"
               />
-              <Select
-                id="tx-payment"
-                value={paymentMethodId}
-                onChange={(e) => setPaymentMethodId(e.target.value)}
-                className="flex-1 min-w-0"
-              >
-                <option value="">Bayar pakai ?</option>
-                {paymentMethods.map((pm) => (
-                  <option key={pm.id} value={pm.id}>
-                    {pm.name}
-                  </option>
-                ))}
+              <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
+                <SelectTrigger className="flex-1 min-w-0">
+                  <SelectValue placeholder="Bayar pakai ?" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethods.map((pm) => (
+                    <SelectItem key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
@@ -169,17 +174,17 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
               <div className="space-y-1">
                 <Label>Tambah barang</Label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={currentProductId}
-                    onChange={(e) => setCurrentProductId(e.target.value)}
-                    className="max-w-[160px]"
-                  >
-                    <option value="">Pilih produk</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} – Rp {Number(p.price).toLocaleString('id-ID')}
-                      </option>
-                    ))}
+                  <Select value={currentProductId} onValueChange={setCurrentProductId}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Pilih produk" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} – Rp {Number(p.price).toLocaleString('id-ID')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                   <Input
                     type="number"

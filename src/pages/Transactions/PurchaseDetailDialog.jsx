@@ -100,16 +100,28 @@ export function PurchaseDetailDialog({ open, onOpenChange, transactionId, onEdit
             <LoadingSpinner />
           </div>
         ) : row ? (
-          <div className="space-y-3 text-sm">
-            <p><span className="font-medium">Tanggal:</span> {format(new Date(row.transaction_date), 'dd MMMM yyyy', { locale: id })}</p>
-            <p><span className="font-medium">Kategori:</span> {categoryName || '-'}</p>
-            <p><span className="font-medium">Keterangan:</span> {row.description}</p>
-            {paymentMethodName && (
-              <p><span className="font-medium">Metode pembayaran:</span> {paymentMethodName}</p>
-            )}
-            <p className="font-semibold pt-2">
-              Jumlah: Rp {Number(row.amount).toLocaleString('id-ID')}
-            </p>
+          <div className="space-y-4">
+            {/* Metadata */}
+            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+              <span className="text-muted-foreground">Tanggal</span>
+              <span className="font-medium">{format(new Date(row.transaction_date), 'dd MMMM yyyy', { locale: id })}</span>
+              <span className="text-muted-foreground">Kategori</span>
+              <span className="font-medium">{categoryName || '-'}</span>
+              <span className="text-muted-foreground">Keterangan</span>
+              <span className="font-medium">{row.description}</span>
+              {paymentMethodName && (
+                <>
+                  <span className="text-muted-foreground">Pembayaran</span>
+                  <span className="font-medium">{paymentMethodName}</span>
+                </>
+              )}
+            </div>
+
+            {/* Amount */}
+            <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3">
+              <span className="text-sm text-red-800">Jumlah</span>
+              <span className="text-lg font-bold text-red-700">Rp {Number(row.amount).toLocaleString('id-ID')}</span>
+            </div>
           </div>
         ) : (
           <p className="text-muted-foreground">Data tidak ditemukan.</p>

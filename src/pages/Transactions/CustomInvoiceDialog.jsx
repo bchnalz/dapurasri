@@ -190,7 +190,7 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
               </div>
               <div className="space-y-1">
                 <Label>Daftar barang</Label>
-                <div className="rounded-md border overflow-hidden h-48 overflow-y-auto">
+                <div className="rounded-xl border overflow-hidden h-48 overflow-y-auto" data-theme-table>
                   {lines.length === 0 ? (
                     <p className="text-xs text-muted-foreground p-4 text-center">
                       Belum ada item. Pilih produk dan klik Tambah.
@@ -198,24 +198,24 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
                   ) : (
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="p-1.5 text-left font-medium">Item</th>
-                          <th className="p-1.5 text-right font-medium w-10">Qty</th>
-                          <th className="p-1.5 text-right font-medium">Harga Asli</th>
-                          <th className="p-1.5 text-center font-medium">Harga Custom</th>
-                          <th className="p-1.5 text-right font-medium">Subtotal</th>
-                          <th className="p-1.5 w-10"></th>
+                        <tr className="border-b">
+                          <th className="p-2 text-left font-semibold">Item</th>
+                          <th className="p-2 text-right font-semibold w-10">Qty</th>
+                          <th className="p-2 text-right font-semibold">Asli</th>
+                          <th className="p-2 text-center font-semibold">Custom</th>
+                          <th className="p-2 text-right font-semibold">Subtotal</th>
+                          <th className="p-2 w-10" />
                         </tr>
                       </thead>
                       <tbody>
                         {lines.map((line, i) => (
-                          <tr key={i} className="border-b last:border-b-0">
-                            <td className="p-1.5">{line.product_name}</td>
-                            <td className="p-1.5 text-right w-10">{Number(line.quantity)}</td>
-                            <td className="p-1.5 text-right text-muted-foreground">
+                          <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+                            <td className="p-2">{line.product_name}</td>
+                            <td className="p-2 text-right w-10">{Number(line.quantity)}</td>
+                            <td className="p-2 text-right text-muted-foreground line-through">
                               Rp {Number(line.unit_price).toLocaleString('id-ID')}
                             </td>
-                            <td className="p-1.5">
+                            <td className="p-2">
                               <div className="flex justify-center">
                                 <Input
                                   type="text"
@@ -230,10 +230,10 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
                                 />
                               </div>
                             </td>
-                            <td className="p-1.5 text-right font-medium">
+                            <td className="p-2 text-right font-medium">
                               Rp {(Number(line.quantity) * Number(line.custom_price)).toLocaleString('id-ID')}
                             </td>
-                            <td className="p-1.5 w-10">
+                            <td className="p-2 w-10">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -254,9 +254,10 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
               </div>
             </div>
 
-            <p className="text-sm font-medium">
-              Total: Rp {total.toLocaleString('id-ID')}
-            </p>
+            <div className="flex items-center justify-between rounded-xl bg-green-50 px-4 py-3">
+              <span className="text-sm text-green-800">Total</span>
+              <span className="text-base font-bold text-green-700">Rp {total.toLocaleString('id-ID')}</span>
+            </div>
           </>
         )}
         <DialogFooter className="flex flex-row w-full gap-2">

@@ -242,7 +242,7 @@ export function SalesInvoicePreviewDialog({ open, onOpenChange, payload, onSucce
         </DialogHeader>
 
         {/* Invoice Preview */}
-        <div className="bg-white p-5 rounded-lg border text-sm">
+        <div className="bg-white p-5 rounded-xl border shadow-sm text-sm">
           {/* Header */}
           <div className="text-center">
             {logoDataUrl ? (
@@ -288,7 +288,7 @@ export function SalesInvoicePreviewDialog({ open, onOpenChange, payload, onSucce
               </div>
             )}
             {/* Total */}
-            <p className="text-xs font-bold text-gray-800 mt-2">
+            <p className="text-sm font-bold text-gray-900 mt-2">
               TOTAL: Rp {Number(total).toLocaleString('id-ID')}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">Terima kasih atas kepercayaan Anda</p>

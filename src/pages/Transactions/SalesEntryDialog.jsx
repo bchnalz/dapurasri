@@ -216,25 +216,34 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
                   <LoadingSpinner />
                 </div>
               ) : (
-                <div className="rounded-md border overflow-hidden h-48 overflow-y-auto">
+                <div className="rounded-xl border overflow-hidden h-48 overflow-y-auto" data-theme-table>
                   {lines.length === 0 ? (
                     <p className="text-xs text-muted-foreground p-4 text-center">
                       Belum ada item. Pilih produk dan klik Tambah.
                     </p>
                   ) : (
                     <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2 font-semibold">Item</th>
+                          <th className="text-right p-2 font-semibold w-10">Qty</th>
+                          <th className="text-right p-2 font-semibold">Harga</th>
+                          <th className="text-right p-2 font-semibold">Subtotal</th>
+                          <th className="w-10 p-2" />
+                        </tr>
+                      </thead>
                       <tbody>
                         {lines.map((line, i) => (
-                          <tr key={i} className="border-b last:border-b-0">
-                            <td className="p-1.5">{line.product_name}</td>
-                            <td className="p-1.5 text-right w-12">{Number(line.quantity)}</td>
-                            <td className="p-1.5 text-right">
+                          <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+                            <td className="p-2">{line.product_name}</td>
+                            <td className="p-2 text-right w-10">{Number(line.quantity)}</td>
+                            <td className="p-2 text-right">
                               Rp {Number(line.unit_price).toLocaleString('id-ID')}
                             </td>
-                            <td className="p-1.5 text-right">
+                            <td className="p-2 text-right font-medium">
                               Rp {(Number(line.quantity) * Number(line.unit_price)).toLocaleString('id-ID')}
                             </td>
-                            <td className="p-1.5 w-10">
+                            <td className="p-2 w-10">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -256,9 +265,10 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
               </div>
             </div>
 
-            <p className="text-sm font-medium">
-              Total: Rp {total.toLocaleString('id-ID')}
-            </p>
+            <div className="flex items-center justify-between rounded-xl bg-green-50 px-4 py-3">
+              <span className="text-sm text-green-800">Total</span>
+              <span className="text-base font-bold text-green-700">Rp {total.toLocaleString('id-ID')}</span>
+            </div>
           </>
         )}
         <DialogFooter className="flex flex-row w-full gap-2">

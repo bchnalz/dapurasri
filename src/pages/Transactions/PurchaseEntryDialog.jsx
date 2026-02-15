@@ -5,7 +5,13 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -192,18 +198,17 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
                 onChange={(e) => setTransactionDate(e.target.value)}
                 className="flex-1 min-w-[140px] text-sm pl-2 pr-8 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:ml-0 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
-              <Select
-                id="purchase-payment"
-                value={paymentMethodId}
-                onChange={(e) => setPaymentMethodId(e.target.value)}
-                className="flex-1 min-w-0"
-              >
-                <option value="">Bayar pakai ?</option>
-                {paymentMethods.map((pm) => (
-                  <option key={pm.id} value={pm.id}>
-                    {pm.name}
-                  </option>
-                ))}
+              <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
+                <SelectTrigger className="flex-1 min-w-0">
+                  <SelectValue placeholder="Bayar pakai ?" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethods.map((pm) => (
+                    <SelectItem key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
@@ -213,15 +218,18 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
                 <div className="flex flex-wrap items-center gap-2">
                   <Select
                     value={lines[0]?.category_id ?? ''}
-                    onChange={(e) => updateLine(0, 'category_id', e.target.value)}
-                    className="max-w-[160px]"
+                    onValueChange={(val) => updateLine(0, 'category_id', val)}
                   >
-                    <option value="">Pilih kategori</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                    <SelectTrigger className="max-w-[160px]">
+                      <SelectValue placeholder="Pilih kategori" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                   <Input
                     placeholder="Keterangan"
@@ -247,17 +255,17 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
                 <div className="space-y-1">
                   <Label>Tambah item</Label>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      value={currentCategoryId}
-                      onChange={(e) => setCurrentCategoryId(e.target.value)}
-                      className="max-w-[160px]"
-                    >
-                      <option value="">Pilih kategori</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                    <Select value={currentCategoryId} onValueChange={setCurrentCategoryId}>
+                      <SelectTrigger className="max-w-[160px]">
+                        <SelectValue placeholder="Pilih kategori" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                     <Input
                       placeholder="Keterangan"
@@ -290,22 +298,30 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
                 </div>
                 <div className="space-y-1">
                   <Label>Daftar item</Label>
-                  <div className="rounded-md border overflow-hidden h-48 overflow-y-auto">
+                  <div className="rounded-xl border overflow-hidden h-48 overflow-y-auto" data-theme-table>
                     {lines.length === 0 ? (
                       <p className="text-xs text-muted-foreground p-4 text-center">
                         Belum ada item. Pilih kategori dan klik Tambah.
                       </p>
                     ) : (
                       <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2 font-semibold">Kategori</th>
+                            <th className="text-left p-2 font-semibold">Keterangan</th>
+                            <th className="text-right p-2 font-semibold">Jumlah</th>
+                            <th className="w-10 p-2" />
+                          </tr>
+                        </thead>
                         <tbody>
                           {lines.map((line, i) => (
-                            <tr key={i} className="border-b last:border-b-0">
-                              <td className="p-1.5">{line.category_name || '(Kategori)'}</td>
-                              <td className="p-1.5">{line.description}</td>
-                              <td className="p-1.5 text-right">
+                            <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+                              <td className="p-2">{line.category_name || '(Kategori)'}</td>
+                              <td className="p-2">{line.description}</td>
+                              <td className="p-2 text-right font-medium">
                                 Rp {Number(line.amount).toLocaleString('id-ID')}
                               </td>
-                              <td className="p-1.5 w-10">
+                              <td className="p-2 w-10">
                                 <Button
                                   type="button"
                                   variant="ghost"

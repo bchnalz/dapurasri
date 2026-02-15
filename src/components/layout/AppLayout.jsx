@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Package, FolderTree, CreditCard, Receipt, ClipboardList, FileText, LogOut, Database, BarChart3, EllipsisVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -79,8 +80,8 @@ function MobileBottomNav() {
   ]
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pb-4 safe-bottom">
-      <div className="bg-white rounded-2xl shadow-[0_-2px_20px_rgba(0,0,0,0.12)] px-2 py-3">
+    <nav className="md:hidden fixed bottom-4 inset-x-0 z-40 px-4 safe-bottom">
+      <Card className="px-2 py-3 rounded-2xl bg-white/15 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.3)]">
         <div className="grid grid-cols-6">
           {allItems.map((item) => {
             const isMore = item.to === '__more'
@@ -132,7 +133,7 @@ function MobileBottomNav() {
             )
           })}
         </div>
-      </div>
+      </Card>
     </nav>
   )
 }
@@ -148,7 +149,7 @@ export function AppLayout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
-        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0 pb-28 md:pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0 pb-36 md:pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Outlet />
         </main>
       </div>

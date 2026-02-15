@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 /* Warm teal/emerald theme – Dapurasri */
 @theme {

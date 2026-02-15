@@ -98,37 +98,50 @@ export function SalesDetailDialog({ open, onOpenChange, transactionId, onEdit, o
             <LoadingSpinner />
           </div>
         ) : transaction ? (
-          <div className="space-y-3 text-sm">
-            <p><span className="font-medium">No. Transaksi:</span> {transaction.transaction_no}</p>
-            <p><span className="font-medium">Tanggal:</span> {format(new Date(transaction.transaction_date), 'dd MMMM yyyy', { locale: id })}</p>
-            {paymentMethodName && (
-              <p><span className="font-medium">Metode pembayaran:</span> {paymentMethodName}</p>
-            )}
-            <div className="rounded border overflow-hidden mt-2">
+          <div className="space-y-4">
+            {/* Metadata */}
+            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+              <span className="text-muted-foreground">No. Transaksi</span>
+              <span className="font-medium">{transaction.transaction_no}</span>
+              <span className="text-muted-foreground">Tanggal</span>
+              <span className="font-medium">{format(new Date(transaction.transaction_date), 'dd MMMM yyyy', { locale: id })}</span>
+              {paymentMethodName && (
+                <>
+                  <span className="text-muted-foreground">Pembayaran</span>
+                  <span className="font-medium">{paymentMethodName}</span>
+                </>
+              )}
+            </div>
+
+            {/* Items table */}
+            <div className="rounded-xl border overflow-hidden" data-theme-table>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-muted/50 border-b">
-                    <th className="text-left p-2 font-medium">Produk</th>
-                    <th className="text-right p-2 font-medium">Qty</th>
-                    <th className="text-right p-2 font-medium">Harga</th>
-                    <th className="text-right p-2 font-medium">Subtotal</th>
+                  <tr className="border-b">
+                    <th className="text-left p-2.5 font-semibold">Produk</th>
+                    <th className="text-right p-2.5 font-semibold">Qty</th>
+                    <th className="text-right p-2.5 font-semibold">Harga</th>
+                    <th className="text-right p-2.5 font-semibold">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody>
                   {details.map((d) => (
-                    <tr key={d.id} className="border-b last:border-0">
-                      <td className="p-2">{d.products?.name ?? '-'}</td>
-                      <td className="p-2 text-right">{Number(d.quantity).toLocaleString('id-ID')}</td>
-                      <td className="p-2 text-right">Rp {Number(d.unit_price).toLocaleString('id-ID')}</td>
-                      <td className="p-2 text-right">Rp {Number(d.subtotal).toLocaleString('id-ID')}</td>
+                    <tr key={d.id} className="border-b last:border-0 transition-colors hover:bg-muted/30">
+                      <td className="p-2.5">{d.products?.name ?? '-'}</td>
+                      <td className="p-2.5 text-right">{Number(d.quantity).toLocaleString('id-ID')}</td>
+                      <td className="p-2.5 text-right">Rp {Number(d.unit_price).toLocaleString('id-ID')}</td>
+                      <td className="p-2.5 text-right font-medium">Rp {Number(d.subtotal).toLocaleString('id-ID')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="font-semibold pt-2">
-              Total: Rp {Number(transaction.total).toLocaleString('id-ID')}
-            </p>
+
+            {/* Total */}
+            <div className="flex items-center justify-between rounded-xl bg-green-50 px-4 py-3">
+              <span className="text-sm text-green-800">Total</span>
+              <span className="text-lg font-bold text-green-700">Rp {Number(transaction.total).toLocaleString('id-ID')}</span>
+            </div>
           </div>
         ) : (
           <p className="text-muted-foreground">Data tidak ditemukan.</p>

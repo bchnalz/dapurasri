@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Plus, Trash2, CalendarIcon } from 'lucide-react'
+import { Plus, Minus, Trash2, CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -411,17 +411,44 @@ export function OrderEntryDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="1"
-                  min="1"
-                  value={currentQuantity}
-                  onChange={(e) => setCurrentQuantity(e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="w-20"
-                  placeholder="Qty"
-                />
+                <div className="flex items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 rounded-r-none shrink-0"
+                    onClick={() =>
+                      setCurrentQuantity((q) =>
+                        Math.max(1, Number(q) - 1)
+                      )
+                    }
+                    disabled={Number(currentQuantity) <= 1}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="1"
+                    value={currentQuantity}
+                    onChange={(e) => setCurrentQuantity(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-14 rounded-none border-x-0 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                    placeholder="Qty"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 rounded-l-none shrink-0"
+                    onClick={() =>
+                      setCurrentQuantity((q) => Number(q) + 1)
+                    }
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   variant="outline"

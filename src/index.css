@@ -2,7 +2,25 @@
 
 /* Warm teal/emerald theme – Dapurasri */
 @theme {
-  --color-background: hsl(40 20% 98%);
+  /* ========================================
+     CUSTOMIZE THESE COLORS
+     ======================================== */
+
+  /* Main page background (behind everything) */
+  --color-background: hsl(0 0% 100%);
+
+  /* Sidebar background */
+  --color-sidebar: hsl(168 30% 97%);
+  --color-sidebar-foreground: hsl(180 15% 15%);
+
+  /* Card/panel backgrounds */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(180 15% 15%);
+
+  /* ========================================
+     SUPPORTING COLORS (adjust if needed)
+     ======================================== */
+
   --color-foreground: hsl(180 15% 15%);
   --color-primary: hsl(168 76% 36%);
   --color-primary-foreground: hsl(0 0% 100%);
@@ -14,11 +32,9 @@
   --color-accent-foreground: hsl(168 60% 18%);
   --color-destructive: hsl(0 72% 48%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(168 20% 88%);
+  --color-border: transparent;
   --color-input: hsl(168 20% 90%);
   --color-ring: hsl(168 76% 36%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(180 15% 15%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(180 15% 15%);
 }
@@ -43,6 +59,16 @@ body {
 }
 [data-theme-table] tbody tr:hover {
   background: hsl(168 30% 96%);
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
+@media screen and (max-width: 767px) {
+  input,
+  select,
+  textarea,
+  [role="combobox"] {
+    font-size: 16px !important;
+  }
 }
 
 /* Calendar day picker reset */

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { OrderEntryDialog } from './Orders/OrderEntryDialog'
 
@@ -28,6 +34,7 @@ export default function Orders() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState(null)
 
   useEffect(() => {
     loadOrders()
@@ -79,6 +86,27 @@ export default function Orders() {
       .map(([name, qty]) => ({ name, qty }))
       .sort((a, b) => b.qty - a.qty)
   }, [orders])
+
+  const productCustomers = useMemo(() => {
+    if (!selectedProduct) return []
+    const map = {}
+    for (const order of orders) {
+      if (!order.order_items?.length) continue
+      const customerName = order.customers?.name ?? '-'
+      for (const item of order.order_items) {
+        if (item.product_name !== selectedProduct) continue
+        const key = customerName
+        if (!map[key]) {
+          map[key] = { customer: customerName, qty: 0, orders: [] }
+        }
+        map[key].qty += Number(item.quantity)
+        if (order.order_number && !map[key].orders.includes(order.order_number)) {
+          map[key].orders.push(order.order_number)
+        }
+      }
+    }
+    return Object.values(map).sort((a, b) => b.qty - a.qty)
+  }, [orders, selectedProduct])
 
   function orderNominal(order) {
     if (!order.order_items?.length) return 0
@@ -179,15 +207,17 @@ export default function Orders() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {productCounts.map(({ name, qty }) => (
-                  <div
+                  <button
                     key={name}
-                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 shadow-sm"
+                    type="button"
+                    onClick={() => setSelectedProduct(name)}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 shadow-sm cursor-pointer transition-colors hover:bg-accent hover:border-primary/30"
                   >
                     <span className="text-xs">{name}</span>
                     <span className="text-xs font-semibold text-primary">
                       {qty}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -330,6 +360,56 @@ export default function Orders() {
         editingOrder={editingOrder}
         onSuccess={onDialogSuccess}
       />
+
+      <Dialog
+        open={!!selectedProduct}
+        onOpenChange={(open) => !open && setSelectedProduct(null)}
+      >
+        <DialogContent compact>
+          <DialogHeader>
+            <DialogTitle>Pemesan – {selectedProduct}</DialogTitle>
+          </DialogHeader>
+          {productCustomers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Tidak ada data.
+            </p>
+          ) : (
+            <div className="rounded-md border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-2 font-medium">Nama Pemesan</th>
+                    <th className="text-right p-2 font-medium">Jumlah</th>
+                    <th className="text-left p-2 font-medium">No. Pesanan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productCustomers.map((row) => (
+                    <tr key={row.customer} className="border-b last:border-0">
+                      <td className="p-2">{row.customer}</td>
+                      <td className="p-2 text-right font-semibold">
+                        {row.qty}
+                      </td>
+                      <td className="p-2 font-mono text-muted-foreground">
+                        {row.orders.join(', ') || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t bg-muted/50">
+                    <td className="p-2 font-medium">Total</td>
+                    <td className="p-2 text-right font-semibold">
+                      {productCustomers.reduce((s, r) => s + r.qty, 0)}
+                    </td>
+                    <td className="p-2" />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

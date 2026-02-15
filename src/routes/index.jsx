@@ -9,6 +9,7 @@ import Categories from '@/pages/master/Categories'
 import PaymentMethods from '@/pages/master/PaymentMethods'
 import Transactions from '@/pages/Transactions'
 import Orders from '@/pages/Orders'
+import Master from '@/pages/Master'
 import Reports from '@/pages/Reports'
 import SalesReports from '@/pages/reports/SalesReports'
 import ExpenseReports from '@/pages/reports/ExpenseReports'
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: 'dashboard', element: <Dashboard /> },
+          { path: 'master', element: <Master /> },
           { path: 'master/products', element: <Products /> },
           { path: 'master/categories', element: <Categories /> },
           { path: 'master/payment-methods', element: <PaymentMethods /> },

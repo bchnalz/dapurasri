@@ -172,13 +172,22 @@ export default function Orders() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold">Daftar Pesanan</h1>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="hidden sm:inline-flex">
           <Plus className="h-4 w-4 mr-2" />
           Tambah Pesanan
         </Button>
       </div>
+
+      {/* Mobile FAB */}
+      <Button
+        onClick={openCreate}
+        size="icon"
+        className="sm:hidden fixed bottom-5 right-5 z-30 h-12 w-12 rounded-full shadow-lg"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
 
       <div className="mb-4">
         <Input

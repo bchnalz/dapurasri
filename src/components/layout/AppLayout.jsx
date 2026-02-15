@@ -1,33 +1,36 @@
-import { useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, FolderTree, CreditCard, Receipt, ClipboardList, FileText, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, FolderTree, CreditCard, Receipt, ClipboardList, FileText, LogOut, Database, BarChart3, EllipsisVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/master/products', label: 'Produk', icon: Package },
-  { to: '/master/categories', label: 'Kategori Pembelian', icon: FolderTree },
-  { to: '/master/payment-methods', label: 'Metode Pembayaran', icon: CreditCard },
+  { to: '/master', label: 'Master', icon: Database },
+  { to: '/master/products', label: 'Produk', icon: Package, hidden: true },
+  { to: '/master/categories', label: 'Kategori Pembelian', icon: FolderTree, hidden: true },
+  { to: '/master/payment-methods', label: 'Metode Pembayaran', icon: CreditCard, hidden: true },
   { to: '/transactions', label: 'Transaksi', icon: Receipt },
-  { to: '/orders', label: 'Daftar Pesanan', icon: ClipboardList },
-  { to: '/reports/sales', label: 'Laporan Penjualan', icon: FileText },
-  { to: '/reports/expenses', label: 'Laporan Pengeluaran', icon: FileText },
+  { to: '/orders', label: 'Pesanan', icon: ClipboardList },
+  { to: '/reports', label: 'Laporan', icon: BarChart3 },
+  { to: '/reports/sales', label: 'Laporan Penjualan', icon: FileText, hidden: true },
+  { to: '/reports/expenses', label: 'Laporan Pengeluaran', icon: FileText, hidden: true },
 ]
 
-function SidebarContent({ onNavigate, className }) {
+const visibleNav = nav.filter(item => !item.hidden)
+
+function SidebarContent({ className }) {
   const location = useLocation()
   const { signOut } = useAuth()
 
   return (
     <div className={cn('flex flex-col gap-1.5 h-full', className)}>
       <div className="flex-1 flex flex-col gap-1">
-        {nav.map(({ to, label, icon: Icon }) => (
+        {visibleNav.map(({ to, label, icon: Icon }) => (
           <Link
             key={to}
             to={to}
-            onClick={onNavigate}
             className={cn(
               'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
               location.pathname === to
@@ -53,59 +56,87 @@ function SidebarContent({ onNavigate, className }) {
   )
 }
 
-export function AppLayout() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+function MobileBottomNav() {
+  const location = useLocation()
+  const { signOut } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside)
+    return () => document.removeEventListener('pointerdown', handleClickOutside)
+  }, [menuOpen])
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Mobile: overlay drawer */}
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="md:hidden fixed inset-0 z-30 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden
-          />
-          <aside className="md:hidden fixed top-0 left-0 z-40 w-56 h-full bg-sidebar text-sidebar-foreground shadow-lg p-3 flex flex-col transition-transform duration-200 ease-out">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="self-end -mr-1 -mt-1"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close menu"
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#BCD9A2] border-t border-[#a8c98e] safe-bottom">
+      <div className="flex items-stretch justify-around">
+        {visibleNav.map(({ to, label, icon: Icon }) => {
+          const isActive = location.pathname === to
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                'flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium transition-colors',
+                isActive
+                  ? 'text-[#1b3a12]'
+                  : 'text-[#4a6340] active:text-[#1b3a12]'
+              )}
             >
-              <X className="h-5 w-5" />
-            </Button>
-            <SidebarContent onNavigate={() => setMobileMenuOpen(false)} className="pt-2" />
-          </aside>
-        </>
-      )}
+              <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
+              {label}
+            </Link>
+          )
+        })}
+        <div className="relative flex flex-1" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(prev => !prev)}
+            className="flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium text-[#4a6340] active:text-[#1b3a12] transition-colors"
+          >
+            <EllipsisVertical className="h-5 w-5" />
+            Lainnya
+          </button>
+          {menuOpen && (
+            <div className="absolute bottom-full right-0 mb-2 mr-1 min-w-36 rounded-lg bg-card shadow-lg border border-border py-1">
+              <button
+                onClick={() => { setMenuOpen(false); signOut() }}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-accent transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Keluar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  )
+}
 
+export function AppLayout() {
+  return (
+    <div className="min-h-screen flex bg-background">
       {/* Desktop: full-height sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-shrink-0 bg-sidebar text-sidebar-foreground shadow-[4px_0_15px_rgba(0,0,0,0.1)] p-3 flex-col z-10">
         <span className="text-sm font-semibold text-foreground mb-4">Dapurasri</span>
         <SidebarContent />
       </aside>
 
-      {/* Right side: header (mobile) + main content */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col min-h-0">
-        <header className="md:hidden flex-shrink-0 h-10 bg-sidebar text-sidebar-foreground flex items-center gap-2 px-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <span className="text-sm font-semibold text-foreground">Dapurasri</span>
-        </header>
-
-        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0">
+        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0 pb-20 md:pb-5">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile: sticky bottom tab bar */}
+      <MobileBottomNav />
     </div>
   )
 }

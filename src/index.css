@@ -71,6 +71,11 @@ body {
   }
 }
 
+/* Safe area for bottom nav on notched devices */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Calendar day picker reset */
 .rdp-root {
   --rdp-accent-color: var(--color-primary);

@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [monthlySummaries, setMonthlySummaries] = useState([])
+  const [expandedMonth, setExpandedMonth] = useState(format(new Date(), 'yyyy-MM'))
 
   useEffect(() => {
     loadStats()
@@ -114,6 +118,13 @@ export default function Dashboard() {
       })
       .filter((m) => m.salesTotal > 0 || m.purchasesTotal > 0)
 
+    const currentMonthKey = format(new Date(), 'yyyy-MM')
+    summaries.sort((a, b) => {
+      if (a.monthKey === currentMonthKey) return -1
+      if (b.monthKey === currentMonthKey) return 1
+      return 0
+    })
+
     setMonthlySummaries(summaries)
 
     setLoading(false)
@@ -128,16 +139,22 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
+    <div className="text-center">
+      <img src="/logo-dapurasri.png" alt="Dapurasri" className="h-20 mx-auto mt-6 mb-8" />
       {monthlySummaries.length === 0 ? (
         <p className="text-sm text-muted-foreground">Belum ada transaksi di tahun ini.</p>
       ) : (
-        <div className="flex flex-wrap gap-4 items-start">
-          {monthlySummaries.map((m) => (
-            <div key={m.monthKey} className="w-[16rem]">
-              <div className="rounded-xl border bg-card px-3 py-2 space-y-2">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{m.label}</p>
+        <div className="flex flex-wrap gap-4 items-start justify-center">
+          {monthlySummaries.map((m) => {
+            const isExpanded = expandedMonth === m.monthKey
+            const isCurrentMonth = m.monthKey === format(new Date(), 'yyyy-MM')
+            return (
+              <Card
+                key={m.monthKey}
+                className={`w-[16rem] ${isCurrentMonth ? 'bg-[#FEFFD3]' : ''}`}
+              >
+                <CardHeader>
+                  <CardTitle>{m.label}</CardTitle>
                   <div className="text-sm text-foreground/90 space-y-1">
                     <p>
                       <span className="text-muted-foreground">Penjualan:</span>{' '}
@@ -148,26 +165,39 @@ export default function Dashboard() {
                       Rp {(Number(m.purchasesTotal) || 0).toLocaleString('id-ID')}
                     </p>
                   </div>
-                </div>
+                </CardHeader>
 
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Item terjual</p>
-                  {m.products.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">-</p>
-                  ) : (
-                    <ul className="list-disc pl-5 text-sm text-foreground/90 space-y-1">
-                      {m.products.map((row) => (
-                        <li key={row.product_id}>
-                          {row.name} ={' '}
-                          {(Number(row.units) || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+                {isExpanded && (
+                  <CardContent className="border-t border-border pt-2">
+                    {m.products.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">-</p>
+                    ) : (
+                      <ul className="list-none pl-0 text-sm text-foreground/90 space-y-1">
+                        {m.products.map((row) => (
+                          <li key={row.product_id}>
+                            {row.name} ={' '}
+                            {(Number(row.units) || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                )}
+
+                <CardFooter>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedMonth(isExpanded ? null : m.monthKey)}
+                    className="gap-1 text-xs text-muted-foreground hover:text-foreground px-0"
+                  >
+                    {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {isExpanded ? 'Sembunyikan' : 'Lihat detail'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

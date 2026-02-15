@@ -35,6 +35,7 @@ export default function Orders() {
   const [editingOrder, setEditingOrder] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [detailOrder, setDetailOrder] = useState(null)
 
   useEffect(() => {
     loadOrders()
@@ -265,7 +266,13 @@ export default function Orders() {
                     return (
                       <tr key={order.id} className="border-b last:border-0">
                         <td className="p-3 whitespace-nowrap font-mono text-xs">
-                          {order.order_number ?? '-'}
+                          <button
+                            type="button"
+                            className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                            onClick={() => setDetailOrder(order)}
+                          >
+                            {order.order_number ?? '-'}
+                          </button>
                         </td>
                         <td className="p-3 whitespace-nowrap">
                           {format(new Date(order.order_date), 'dd MMM yyyy', {
@@ -374,29 +381,35 @@ export default function Orders() {
               Tidak ada data.
             </p>
           ) : (
-            <div className="rounded-md border overflow-hidden">
+            <div className="rounded-md border overflow-hidden flex flex-col max-h-[60vh]">
               <table className="w-full text-xs">
-                <thead>
+                <thead className="sticky top-0 z-10">
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-2 font-medium">Nama Pemesan</th>
                     <th className="text-right p-2 font-medium">Jumlah</th>
                     <th className="text-left p-2 font-medium">No. Pesanan</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {productCustomers.map((row) => (
-                    <tr key={row.customer} className="border-b last:border-0">
-                      <td className="p-2">{row.customer}</td>
-                      <td className="p-2 text-right font-semibold">
-                        {row.qty}
-                      </td>
-                      <td className="p-2 font-mono text-muted-foreground">
-                        {row.orders.join(', ') || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
+              </table>
+              <div className="overflow-y-auto flex-1">
+                <table className="w-full text-xs">
+                  <tbody>
+                    {productCustomers.map((row) => (
+                      <tr key={row.customer} className="border-b last:border-0">
+                        <td className="p-2">{row.customer}</td>
+                        <td className="p-2 text-right font-semibold">
+                          {row.qty}
+                        </td>
+                        <td className="p-2 font-mono text-muted-foreground">
+                          {row.orders.join(', ') || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <table className="w-full text-xs">
+                <tfoot className="sticky bottom-0">
                   <tr className="border-t bg-muted/50">
                     <td className="p-2 font-medium">Total</td>
                     <td className="p-2 text-right font-semibold">
@@ -408,6 +421,97 @@ export default function Orders() {
               </table>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!detailOrder}
+        onOpenChange={(open) => !open && setDetailOrder(null)}
+      >
+        <DialogContent compact>
+          {detailOrder && (() => {
+            const status = STATUS_CONFIG[detailOrder.status] ?? STATUS_CONFIG.pending
+            const items = detailOrder.order_items ?? []
+            const nominal = orderNominal(detailOrder)
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>
+                    Detail Pesanan {detailOrder.order_number ?? ''}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pemesan</p>
+                    <p className="font-medium">{detailOrder.customers?.name ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <span className={cn('inline-block rounded-full px-2 py-0.5 text-xs font-medium', status.className)}>
+                      {status.label}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tanggal Pesanan</p>
+                    <p className="font-medium">
+                      {format(new Date(detailOrder.order_date), 'dd MMM yyyy', { locale: localeId })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Target Selesai</p>
+                    <p className="font-medium">
+                      {detailOrder.target_date
+                        ? format(new Date(detailOrder.target_date), 'dd MMM yyyy', { locale: localeId })
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Daftar Barang</p>
+                  <div className="rounded-md border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left p-2 font-medium">Produk</th>
+                          <th className="text-right p-2 font-medium">Qty</th>
+                          <th className="text-right p-2 font-medium">Harga</th>
+                          <th className="text-right p-2 font-medium">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item, i) => {
+                          const qty = Number(item.quantity)
+                          const price = Number(item.unit_price || 0)
+                          return (
+                            <tr key={i} className="border-b last:border-0">
+                              <td className="p-2">{item.product_name}</td>
+                              <td className="p-2 text-right">{qty}</td>
+                              <td className="p-2 text-right whitespace-nowrap">
+                                Rp {price.toLocaleString('id-ID')}
+                              </td>
+                              <td className="p-2 text-right whitespace-nowrap">
+                                Rp {(qty * price).toLocaleString('id-ID')}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t bg-muted/50">
+                          <td className="p-2 font-medium" colSpan={3}>Total</td>
+                          <td className="p-2 text-right font-semibold whitespace-nowrap">
+                            Rp {nominal.toLocaleString('id-ID')}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
         </DialogContent>
       </Dialog>
 

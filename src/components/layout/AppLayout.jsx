@@ -73,46 +73,64 @@ function MobileBottomNav() {
     return () => document.removeEventListener('pointerdown', handleClickOutside)
   }, [menuOpen])
 
+  const allItems = [
+    ...visibleNav,
+    { to: '__more', label: 'Lainnya', icon: EllipsisVertical },
+  ]
+
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#BCD9A2] border-t border-[#a8c98e] safe-bottom">
-      <div className="flex items-stretch justify-around">
-        {visibleNav.map(({ to, label, icon: Icon }) => {
-          const isActive = location.pathname === to
-          return (
-            <Link
-              key={to}
-              to={to}
-              className={cn(
-                'flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium transition-colors',
-                isActive
-                  ? 'text-[#1b3a12]'
-                  : 'text-[#4a6340] active:text-[#1b3a12]'
-              )}
-            >
-              <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
-              {label}
-            </Link>
-          )
-        })}
-        <div className="relative flex flex-1" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen(prev => !prev)}
-            className="flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium text-[#4a6340] active:text-[#1b3a12] transition-colors"
-          >
-            <EllipsisVertical className="h-5 w-5" />
-            Lainnya
-          </button>
-          {menuOpen && (
-            <div className="absolute bottom-full right-0 mb-2 mr-1 min-w-36 rounded-lg bg-card shadow-lg border border-border py-1">
-              <button
-                onClick={() => { setMenuOpen(false); signOut() }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-accent transition-colors"
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pb-4 safe-bottom">
+      <div className="bg-white rounded-2xl shadow-[0_-2px_20px_rgba(0,0,0,0.12)] px-2 py-3">
+        <div className="grid grid-cols-6">
+          {allItems.map((item) => {
+            const isMore = item.to === '__more'
+            const isActive = !isMore && location.pathname === item.to
+            const Icon = item.icon
+
+            if (isMore) {
+              return (
+                <div key={item.to} className="relative flex flex-col items-center" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(prev => !prev)}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <Icon className={cn('h-5 w-5 text-[#4a6340]', menuOpen && 'stroke-[2.5]')} />
+                    <span className="text-[10px] font-medium text-[#4a6340]">{item.label}</span>
+                  </button>
+                  {menuOpen && (
+                    <div className="absolute bottom-full right-0 mb-2 min-w-36 rounded-xl bg-white shadow-lg border border-gray-100 py-1">
+                      <button
+                        onClick={() => { setMenuOpen(false); signOut() }}
+                        className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-gray-50 transition-colors rounded-xl"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Keluar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex flex-col items-center gap-1"
               >
-                <LogOut className="h-4 w-4" />
-                Keluar
-              </button>
-            </div>
-          )}
+                <Icon className={cn(
+                  'h-5 w-5 transition-all',
+                  isActive ? 'text-[#3d6b2e] stroke-[2.5]' : 'text-[#4a6340]'
+                )} />
+                <span className={cn(
+                  'text-[10px] font-medium',
+                  isActive ? 'text-[#3d6b2e] font-semibold' : 'text-[#4a6340]'
+                )}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </nav>
@@ -121,7 +139,7 @@ function MobileBottomNav() {
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-screen flex bg-background overflow-hidden">
       {/* Desktop: full-height sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-shrink-0 bg-sidebar text-sidebar-foreground shadow-[4px_0_15px_rgba(0,0,0,0.1)] p-3 flex-col z-10">
         <span className="text-sm font-semibold text-foreground mb-4">Dapurasri</span>
@@ -129,8 +147,8 @@ export function AppLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0 pb-20 md:pb-5">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
+        <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0 pb-28 md:pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Outlet />
         </main>
       </div>

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
-import { Plus, Copy, TrendingUp, TrendingDown, Receipt } from 'lucide-react'
+import { Plus, Copy, TrendingUp, TrendingDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TransactionList } from './Transactions/TransactionList'
 import { SalesEntryDialog } from './Transactions/SalesEntryDialog'
@@ -95,49 +94,14 @@ export default function Transactions() {
 
   return (
     <div>
-      <Card className="border border-border/40">
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-1">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Receipt className="h-4 w-4" />
-            </span>
-            <CardTitle>Transaksi</CardTitle>
-          </div>
-          <div className="hidden lg:flex items-center gap-1.5">
-            <Button
-              size="sm"
-              onClick={openNewSales}
-              className="h-7 gap-1 bg-green-600 hover:bg-green-700 text-white text-xs"
-            >
-              <Plus className="h-3 w-3" />
-              Pemasukan
-            </Button>
-            <Button
-              size="sm"
-              onClick={openNewPurchase}
-              className="h-7 gap-1 bg-red-600 hover:bg-red-700 text-white text-xs"
-            >
-              <Plus className="h-3 w-3" />
-              Pengeluaran
-            </Button>
-            <Button
-              size="sm"
-              onClick={openCustomInvoice}
-              className="h-7 gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <Copy className="h-3 w-3" />
-              Custom
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="px-3 pb-3">
-          <TransactionList
-            refreshKey={refreshKey}
-            onViewSalesDetail={(row) => setDetailSalesId(row.id)}
-            onViewPurchaseDetail={(row) => setDetailPurchaseId(row.id)}
-          />
-        </CardContent>
-      </Card>
+      <TransactionList
+        refreshKey={refreshKey}
+        onViewSalesDetail={(row) => setDetailSalesId(row.id)}
+        onViewPurchaseDetail={(row) => setDetailPurchaseId(row.id)}
+        onAddSales={openNewSales}
+        onAddPurchase={openNewPurchase}
+        onCustomInvoice={openCustomInvoice}
+      />
 
       <SalesEntryDialog
         open={salesEntryOpen}

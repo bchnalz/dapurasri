@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -138,63 +139,113 @@ export default function Dashboard() {
     )
   }
 
+  const currentMonthKeyRender = format(new Date(), 'yyyy-MM')
+  const fmtRp = (v) => `Rp ${(Number(v) || 0).toLocaleString('id-ID')}`
+
   return (
-    <div className="text-center">
-      <img src="/logo-dapurasri.png" alt="Dapurasri" className="h-20 mx-auto mt-6 mb-8" />
+    <div className="max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col items-center pt-6 pb-8">
+        <img src="/logo-dapurasri.png" alt="Dapurasri" className="h-20 mb-3 drop-shadow-sm" />
+        <p className="text-xs tracking-widest uppercase text-muted-foreground">Ringkasan Bulanan</p>
+      </div>
+
       {monthlySummaries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Belum ada transaksi di tahun ini.</p>
+        <p className="text-center text-sm text-muted-foreground py-8">
+          Belum ada transaksi di tahun ini.
+        </p>
       ) : (
-        <div className="flex flex-wrap gap-4 items-start justify-center">
+        <div className="flex flex-col gap-3 px-1">
           {monthlySummaries.map((m) => {
             const isExpanded = expandedMonth === m.monthKey
-            const isCurrentMonth = m.monthKey === format(new Date(), 'yyyy-MM')
+            const isCurrentMonth = m.monthKey === currentMonthKeyRender
+            const profit = (Number(m.salesTotal) || 0) - (Number(m.purchasesTotal) || 0)
+
             return (
               <Card
                 key={m.monthKey}
-                className={`w-[16rem] ${isCurrentMonth ? 'bg-[#FEFFD3]' : ''}`}
-              >
-                <CardHeader>
-                  <CardTitle>{m.label}</CardTitle>
-                  <div className="text-sm text-foreground/90 space-y-1">
-                    <p>
-                      <span className="text-muted-foreground">Penjualan:</span>{' '}
-                      Rp {(Number(m.salesTotal) || 0).toLocaleString('id-ID')}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Pengeluaran:</span>{' '}
-                      Rp {(Number(m.purchasesTotal) || 0).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </CardHeader>
-
-                {isExpanded && (
-                  <CardContent className="border-t border-border pt-2">
-                    {m.products.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">-</p>
-                    ) : (
-                      <ul className="list-none pl-0 text-sm text-foreground/90 space-y-1">
-                        {m.products.map((row) => (
-                          <li key={row.product_id}>
-                            {row.name} ={' '}
-                            {(Number(row.units) || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </CardContent>
+                className={cn(
+                  'transition-all duration-300 ease-out cursor-pointer border',
+                  isCurrentMonth
+                    ? 'bg-[#FEFFD3] border-[#e8e6a0] shadow-lg'
+                    : 'border-transparent hover:shadow-md',
+                  isExpanded && 'shadow-lg'
                 )}
+                onClick={() => setExpandedMonth(isExpanded ? null : m.monthKey)}
+              >
+                {/* Card head */}
+                <div className="px-4 pt-3 pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold capitalize tracking-tight text-foreground">
+                        {m.label}
+                      </h3>
+                      {isCurrentMonth && (
+                        <span className="inline-block mt-0.5 text-[10px] font-medium tracking-wide uppercase text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                          Bulan ini
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 text-muted-foreground transition-transform duration-300',
+                        isExpanded && 'rotate-180'
+                      )}
+                    />
+                  </div>
 
-                <CardFooter>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedMonth(isExpanded ? null : m.monthKey)}
-                    className="gap-1 text-xs text-muted-foreground hover:text-foreground px-0"
-                  >
-                    {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                    {isExpanded ? 'Sembunyikan' : 'Lihat detail'}
-                  </Button>
-                </CardFooter>
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" /> Penjualan
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">{fmtRp(m.salesTotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 flex items-center gap-1">
+                        <TrendingDown className="h-3 w-3" /> Pengeluaran
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">{fmtRp(m.purchasesTotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                        Laba
+                      </p>
+                      <p className={cn(
+                        'text-sm font-semibold',
+                        profit >= 0 ? 'text-emerald-600' : 'text-red-500'
+                      )}>
+                        {fmtRp(profit)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collapsible detail */}
+                <div className="collapsible-content" data-open={isExpanded}>
+                  <div>
+                    <div className="px-4 pb-3 pt-2 border-t border-border/50">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                        Item Terjual
+                      </p>
+                      {m.products.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">Tidak ada data</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {m.products.map((row) => (
+                            <div key={row.product_id} className="flex items-center justify-between text-sm">
+                              <span className="text-foreground/90 truncate mr-2">{row.name}</span>
+                              <span className="font-medium text-foreground tabular-nums shrink-0">
+                                {(Number(row.units) || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </Card>
             )
           })}

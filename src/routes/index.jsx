@@ -8,6 +8,7 @@ import Products from '@/pages/master/Products'
 import Categories from '@/pages/master/Categories'
 import PaymentMethods from '@/pages/master/PaymentMethods'
 import Transactions from '@/pages/Transactions'
+import Orders from '@/pages/Orders'
 import Reports from '@/pages/Reports'
 import SalesReports from '@/pages/reports/SalesReports'
 import ExpenseReports from '@/pages/reports/ExpenseReports'
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'master/categories', element: <Categories /> },
           { path: 'master/payment-methods', element: <PaymentMethods /> },
           { path: 'transactions', element: <Transactions /> },
+          { path: 'orders', element: <Orders /> },
           // Backward-compatible entrypoint (redirect / landing)
           { path: 'reports', element: <Reports /> },
           { path: 'reports/sales', element: <SalesReports /> },

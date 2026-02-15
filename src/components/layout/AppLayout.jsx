@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, FolderTree, CreditCard, Receipt, FileText, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, FolderTree, CreditCard, Receipt, ClipboardList, FileText, LogOut, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,7 @@ const nav = [
   { to: '/master/categories', label: 'Kategori Pembelian', icon: FolderTree },
   { to: '/master/payment-methods', label: 'Metode Pembayaran', icon: CreditCard },
   { to: '/transactions', label: 'Transaksi', icon: Receipt },
+  { to: '/orders', label: 'Daftar Pesanan', icon: ClipboardList },
   { to: '/reports/sales', label: 'Laporan Penjualan', icon: FileText },
   { to: '/reports/expenses', label: 'Laporan Pengeluaran', icon: FileText },
 ]
@@ -56,21 +57,8 @@ export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="flex-shrink-0 h-10 border-b border-border bg-card flex items-center gap-2 px-3 md:px-5">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden h-8 w-8 shrink-0"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <span className="text-sm font-semibold text-foreground">Dapurasri</span>
-      </header>
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
-        {/* Mobile: overlay drawer */}
+    <div className="min-h-screen flex bg-background">
+      {/* Mobile: overlay drawer */}
       {mobileMenuOpen && (
         <>
           <div
@@ -78,7 +66,7 @@ export function AppLayout() {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden
           />
-          <aside className="md:hidden fixed top-0 left-0 z-40 w-56 h-full border-r border-border bg-card shadow-lg p-3 flex flex-col transition-transform duration-200 ease-out">
+          <aside className="md:hidden fixed top-0 left-0 z-40 w-56 h-full bg-sidebar text-sidebar-foreground shadow-lg p-3 flex flex-col transition-transform duration-200 ease-out">
             <Button
               variant="ghost"
               size="icon"
@@ -93,10 +81,26 @@ export function AppLayout() {
         </>
       )}
 
-        {/* Desktop: always-visible sidebar */}
-        <aside className="hidden md:flex md:w-56 md:flex-shrink-0 border-r border-border bg-card shadow-sm p-3 flex-col">
-          <SidebarContent />
-        </aside>
+      {/* Desktop: full-height sidebar */}
+      <aside className="hidden md:flex md:w-56 md:flex-shrink-0 bg-sidebar text-sidebar-foreground shadow-[4px_0_15px_rgba(0,0,0,0.1)] p-3 flex-col z-10">
+        <span className="text-sm font-semibold text-foreground mb-4">Dapurasri</span>
+        <SidebarContent />
+      </aside>
+
+      {/* Right side: header (mobile) + main content */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <header className="md:hidden flex-shrink-0 h-10 bg-sidebar text-sidebar-foreground flex items-center gap-2 px-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <span className="text-sm font-semibold text-foreground">Dapurasri</span>
+        </header>
 
         <main className="flex-1 p-3 md:p-5 overflow-auto bg-background min-w-0">
           <Outlet />

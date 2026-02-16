@@ -196,12 +196,12 @@ export function TransactionList({
         <div className="flex items-center justify-center gap-6 mt-1">
           <div className="text-center">
             <p className="text-[11px] text-muted-foreground">Pemasukan</p>
-            <p className="text-base font-bold text-green-700">Rp {animatedSales.toLocaleString('id-ID')}</p>
+            <p className="text-base font-bold text-green-700">+ Rp {animatedSales.toLocaleString('id-ID')}</p>
           </div>
           <div className="h-8 w-px bg-gray-200" />
           <div className="text-center">
             <p className="text-[11px] text-muted-foreground">Pengeluaran</p>
-            <p className="text-base font-bold text-red-700">Rp {animatedPurchases.toLocaleString('id-ID')}</p>
+            <p className="text-base font-bold text-red-700">- Rp {animatedPurchases.toLocaleString('id-ID')}</p>
           </div>
         </div>
       </div>
@@ -249,7 +249,7 @@ export function TransactionList({
                   {category(row)}
                 </td>
                 <td className={`p-2 text-right whitespace-nowrap font-medium ${isSales(row) ? 'text-green-700' : 'text-red-700'}`}>
-                  Rp {row._amount.toLocaleString('id-ID')}
+                  {isSales(row) ? '+ ' : '- '}Rp {row._amount.toLocaleString('id-ID')}
                 </td>
                 <td className="p-2 flex justify-end">
                   <Button
@@ -286,7 +286,7 @@ export function TransactionList({
                 {format(new Date(row.transaction_date), 'dd MMM yyyy', { locale: id })}
               </span>
               <span className={`text-sm font-semibold shrink-0 ${isSales(row) ? 'text-green-700' : 'text-red-700'}`}>
-                Rp {row._amount.toLocaleString('id-ID')}
+                {isSales(row) ? '+ ' : '- '}Rp {row._amount.toLocaleString('id-ID')}
               </span>
             </div>
             <div className="flex items-center justify-between mt-0.5 min-w-0">

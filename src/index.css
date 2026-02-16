@@ -169,6 +169,17 @@ body {
   animation: section-reveal 0.4s ease-out both;
 }
 
+/* Smooth sonner toast enter / exit */
+[data-sonner-toast] {
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 350ms cubic-bezier(0.22, 1, 0.36, 1),
+              height 400ms ease !important;
+}
+[data-sonner-toast][data-removed="true"] {
+  transition: transform 300ms cubic-bezier(0.4, 0, 1, 1),
+              opacity 200ms ease-out !important;
+}
+
 /* Calendar day picker reset */
 .rdp-root {
   --rdp-accent-color: var(--color-primary);

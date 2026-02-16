@@ -115,6 +115,36 @@ body {
   animation: card-slide-up 0.3s ease-out both;
 }
 
+/* Staggered chip entrance (product summary badges) */
+@keyframes chip-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-chip-in {
+  animation: chip-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Table row entrance */
+@keyframes row-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-row-in {
+  animation: row-fade-in 0.3s ease-out both;
+}
+
 /* FAB overlay backdrop */
 .fab-backdrop {
   animation: fade-in 0.15s ease-out both;
@@ -122,6 +152,21 @@ body {
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Smooth section reveal */
+@keyframes section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-section-in {
+  animation: section-reveal 0.4s ease-out both;
 }
 
 /* Calendar day picker reset */

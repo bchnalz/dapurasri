@@ -1,24 +1,60 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { id as idLocale } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft, FileSpreadsheet, Filter, TrendingUp, TrendingDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+
+function useAnimatedNumber(target, duration = 500) {
+  const [display, setDisplay] = useState(target)
+  const rafRef = useRef(null)
+  const startRef = useRef({ value: target, time: 0 })
+
+  useEffect(() => {
+    const from = display
+    if (from === target) return
+    startRef.current = { value: from, time: performance.now() }
+
+    function tick(now) {
+      const elapsed = now - startRef.current.time
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(startRef.current.value + (target - startRef.current.value) * eased))
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [target, duration])
+
+  return display
+}
 
 /**
  * @param {{ mode: 'sales' | 'purchases' }} props
  */
 export function ReportBase({ mode }) {
+  const navigate = useNavigate()
   const isSales = mode === 'sales'
-  const isPurchases = mode === 'purchases'
 
   const [products, setProducts] = useState([])
-  const [productId, setProductId] = useState('')
+  const [productId, setProductId] = useState('all')
   const [paymentMethods, setPaymentMethods] = useState([])
-  const [paymentMethodId, setPaymentMethodId] = useState('')
+  const [paymentMethodId, setPaymentMethodId] = useState('all')
 
   const [dateFrom, setDateFrom] = useState(() =>
     format(startOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd')
@@ -27,8 +63,10 @@ export function ReportBase({ mode }) {
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
-  const [salesTotal, setSalesTotal] = useState(0)
-  const [purchasesTotal, setPurchasesTotal] = useState(0)
+  const [total, setTotal] = useState(0)
+  const [hasSearched, setHasSearched] = useState(false)
+
+  const animatedTotal = useAnimatedNumber(total)
 
   useEffect(() => {
     const loaders = [
@@ -50,15 +88,16 @@ export function ReportBase({ mode }) {
 
   const title = useMemo(() => {
     if (isSales) return 'Laporan Penjualan'
-    if (isPurchases) return 'Laporan Pengeluaran'
-    return 'Laporan'
-  }, [isSales, isPurchases])
+    return 'Laporan Pengeluaran'
+  }, [isSales])
+
+  const TitleIcon = isSales ? TrendingUp : TrendingDown
 
   async function applyFilter() {
     setLoading(true)
     setRows([])
-    setSalesTotal(0)
-    setPurchasesTotal(0)
+    setTotal(0)
+    setHasSearched(true)
 
     try {
       if (isSales) {
@@ -69,10 +108,10 @@ export function ReportBase({ mode }) {
           .lte('transaction_date', dateTo)
           .order('transaction_date', { ascending: true })
 
-        if (paymentMethodId) {
+        if (paymentMethodId && paymentMethodId !== 'all') {
           salesQuery = salesQuery.eq('payment_method_id', paymentMethodId)
         }
-        if (productId) {
+        if (productId && productId !== 'all') {
           const { data: detailIds, error: detailErr } = await supabase
             .from('sales_details')
             .select('sales_transaction_id')
@@ -96,18 +135,13 @@ export function ReportBase({ mode }) {
         }
 
         const sales = salesRes.data ?? []
-        const salesTotalVal = sales.reduce((sum, r) => sum + Number(r.total), 0)
-        setSalesTotal(salesTotalVal)
-        setPurchasesTotal(0)
-
+        setTotal(sales.reduce((sum, r) => sum + Number(r.total), 0))
         setRows(
           sales
             .map((r) => ({
               date: r.transaction_date,
-              type: 'Penjualan',
               description: r.transaction_no,
-              debit: 0,
-              credit: Number(r.total),
+              amount: Number(r.total),
             }))
             .sort((a, b) => new Date(a.date) - new Date(b.date))
         )
@@ -121,7 +155,7 @@ export function ReportBase({ mode }) {
         .lte('transaction_date', dateTo)
         .order('transaction_date', { ascending: true })
 
-      if (paymentMethodId) {
+      if (paymentMethodId && paymentMethodId !== 'all') {
         purchasesQuery = purchasesQuery.eq('payment_method_id', paymentMethodId)
       }
 
@@ -132,18 +166,13 @@ export function ReportBase({ mode }) {
       }
 
       const purchases = purchasesRes.data ?? []
-      const purchasesTotalVal = purchases.reduce((sum, r) => sum + Number(r.amount), 0)
-      setSalesTotal(0)
-      setPurchasesTotal(purchasesTotalVal)
-
+      setTotal(purchases.reduce((sum, r) => sum + Number(r.amount), 0))
       setRows(
         purchases
           .map((r) => ({
             date: r.transaction_date,
-            type: 'Pengeluaran',
             description: r.description,
-            debit: Number(r.amount),
-            credit: 0,
+            amount: Number(r.amount),
           }))
           .sort((a, b) => new Date(a.date) - new Date(b.date))
       )
@@ -169,11 +198,10 @@ export function ReportBase({ mode }) {
     ]
 
     rows.forEach((r) => {
-      const nominal = isSales ? Number(r.credit) || 0 : Number(r.debit) || 0
       ws.addRow({
         tanggal: format(new Date(r.date), 'yyyy-MM-dd'),
         keterangan: r.description,
-        nominal,
+        nominal: r.amount,
       })
     })
 
@@ -197,118 +225,206 @@ export function ReportBase({ mode }) {
     URL.revokeObjectURL(url)
   }
 
+  const accent = isSales
+    ? {
+        iconBg: 'bg-green-100 text-green-700',
+        border: 'border-green-200/50',
+        text: 'text-green-700',
+        bar: 'bg-green-500',
+        emptyBg: 'bg-green-50 text-green-300',
+      }
+    : {
+        iconBg: 'bg-red-100 text-red-700',
+        border: 'border-red-200/50',
+        text: 'text-red-700',
+        bar: 'bg-red-500',
+        emptyBg: 'bg-red-50 text-red-300',
+      }
+
+  const periodLabel = (() => {
+    try {
+      const from = format(new Date(dateFrom), 'dd MMM yyyy', { locale: idLocale })
+      const to = format(new Date(dateTo), 'dd MMM yyyy', { locale: idLocale })
+      return `${from} — ${to}`
+    } catch {
+      return ''
+    }
+  })()
+
   return (
-    <div>
-      <div className="mb-3">
-        <h2 className="text-lg font-medium">{title}</h2>
+    <div className="animate-section-in">
+      {/* Header */}
+      <div className="mb-5">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/reports')}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground active:scale-95"
+            aria-label="Kembali"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent.iconBg} transition-transform duration-300`}>
+            <TitleIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+            {hasSearched && periodLabel && (
+              <p className="text-xs text-muted-foreground mt-0.5 animate-chip-in">
+                {periodLabel}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-end mb-6 p-4 rounded-xl border-2 border-border bg-card shadow-sm">
-        {isSales && (
-          <div>
-            <Label htmlFor="report-product" className="block mb-1 text-sm">
-              Filter produk (hanya penjualan)
+      {/* Filter panel */}
+      <div className="animate-card-in rounded-2xl border-2 border-border bg-card p-4 shadow-sm mb-6" style={{ animationDelay: '60ms' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground">Filter</span>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-end">
+          {isSales && (
+            <div className="min-w-[180px]">
+              <Label className="block mb-1.5 text-xs font-medium text-muted-foreground">
+                Produk
+              </Label>
+              <Select value={productId} onValueChange={setProductId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Semua produk" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua produk</SelectItem>
+                  {products.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="min-w-[180px]">
+            <Label className="block mb-1.5 text-xs font-medium text-muted-foreground">
+              Metode Pembayaran
             </Label>
-            <Select
-              id="report-product"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              className="w-48"
-            >
-              <option value="">Semua</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+            <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Semua metode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua metode</SelectItem>
+                {paymentMethods.map((pm) => (
+                  <SelectItem key={pm.id} value={String(pm.id)}>{pm.name}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
-        )}
 
-        <div>
-          <Label htmlFor="report-payment-method" className="block mb-1 text-sm">
-            Metode pembayaran
-          </Label>
-          <Select
-            id="report-payment-method"
-            value={paymentMethodId}
-            onChange={(e) => setPaymentMethodId(e.target.value)}
-            className="w-48"
-          >
-            <option value="">Semua</option>
-            {paymentMethods.map((pm) => (
-              <option key={pm.id} value={pm.id}>
-                {pm.name}
-              </option>
-            ))}
-          </Select>
-        </div>
+          <div className="min-w-[150px]">
+            <Label htmlFor="report-from" className="block mb-1.5 text-xs font-medium text-muted-foreground">
+              Dari tanggal
+            </Label>
+            <Input
+              id="report-from"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full"
+            />
+          </div>
 
-        <div>
-          <Label htmlFor="report-from" className="block mb-1 text-sm">
-            Dari
-          </Label>
-          <Input
-            id="report-from"
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="w-40"
-          />
-        </div>
-        <div>
-          <Label htmlFor="report-to" className="block mb-1 text-sm">
-            Sampai
-          </Label>
-          <Input
-            id="report-to"
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="w-40"
-          />
-        </div>
+          <div className="min-w-[150px]">
+            <Label htmlFor="report-to" className="block mb-1.5 text-xs font-medium text-muted-foreground">
+              Sampai tanggal
+            </Label>
+            <Input
+              id="report-to"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full"
+            />
+          </div>
 
-        <div className="flex gap-2">
-          <Button onClick={applyFilter} disabled={loading}>
-            {loading ? 'Memuat...' : 'Terapkan Filter'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleExportExcel}
-            disabled={loading || rows.length === 0}
-          >
-            Export Excel
-          </Button>
+          <div className="flex gap-2 pt-1">
+            <Button onClick={applyFilter} disabled={loading} className="gap-1.5 transition-all duration-200 active:scale-95">
+              {loading ? 'Memuat...' : 'Terapkan'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportExcel}
+              disabled={loading || rows.length === 0}
+              className="gap-1.5 transition-all duration-200 active:scale-95"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
+        <div className="flex justify-center py-16">
           <LoadingSpinner />
         </div>
-      ) : (
+      ) : hasSearched ? (
         <>
+          {/* Summary card */}
+          <div className="animate-card-in mb-5 max-w-xs" style={{ animationDelay: '80ms' }}>
+            <div className={`rounded-2xl border-2 ${accent.border} bg-card p-4 shadow-sm transition-shadow duration-300 hover:shadow-md`}>
+              <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
+                Total {isSales ? 'Penjualan' : 'Pengeluaran'}
+              </p>
+              <p className={`text-2xl font-bold tracking-tight ${accent.text} mt-1 tabular-nums`}>
+                Rp {animatedTotal.toLocaleString('id-ID')}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {rows.length} transaksi
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop table */}
           <div
-            className="rounded-xl border-2 border-border overflow-x-auto mb-6 bg-card shadow-sm"
+            className="hidden lg:block animate-card-in rounded-2xl border-2 border-border overflow-hidden bg-card shadow-sm"
+            style={{ animationDelay: '120ms' }}
             data-theme-table
           >
-            <table className="w-full text-xs">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left p-3 font-medium">Tanggal</th>
-                  <th className="text-left p-3 font-medium">Keterangan</th>
-                  <th className="text-right p-3 font-medium">Nominal</th>
+                  <th className="w-1 p-0" />
+                  <th className="text-left p-3 text-xs font-semibold tracking-wide uppercase text-muted-foreground">Tanggal</th>
+                  <th className="text-left p-3 text-xs font-semibold tracking-wide uppercase text-muted-foreground">Keterangan</th>
+                  <th className="text-right p-3 text-xs font-semibold tracking-wide uppercase text-muted-foreground">Nominal</th>
                 </tr>
               </thead>
               <tbody>
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center text-muted-foreground py-10 text-sm">
+                      Tidak ada data untuk periode ini
+                    </td>
+                  </tr>
+                )}
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-b last:border-0">
-                    <td className="p-3">{format(new Date(r.date), 'dd MMM yyyy')}</td>
-                    <td className="p-3">{r.description}</td>
-                    <td className="p-3 text-right">
-                      Rp{' '}
-                      {Number(isSales ? r.credit : r.debit).toLocaleString('id-ID')}
+                  <tr
+                    key={i}
+                    className="animate-row-in border-b last:border-0 transition-colors hover:bg-muted/30"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <td className={`w-1 p-0 ${accent.bar}`} />
+                    <td className="p-3 whitespace-nowrap text-sm">
+                      {format(new Date(r.date), 'dd MMM yyyy', { locale: idLocale })}
+                    </td>
+                    <td className="p-3 text-sm max-w-[300px] truncate" title={r.description}>
+                      {r.description}
+                    </td>
+                    <td className={`p-3 text-right whitespace-nowrap font-semibold tabular-nums ${accent.text}`}>
+                      Rp {r.amount.toLocaleString('id-ID')}
                     </td>
                   </tr>
                 ))}
@@ -316,30 +432,48 @@ export function ReportBase({ mode }) {
             </table>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 max-w-xl">
-            {isSales ? (
-              <div className="rounded-xl border-2 border-primary/20 bg-card p-4 shadow-sm">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Penjualan (periode)
-                </p>
-                <p className="text-xl font-semibold text-primary">
-                  Rp {Number(salesTotal).toLocaleString('id-ID')}
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl border-2 border-secondary-foreground/20 bg-card p-4 shadow-sm">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Pengeluaran (periode)
-                </p>
-                <p className="text-xl font-semibold text-secondary-foreground">
-                  Rp {Number(purchasesTotal).toLocaleString('id-ID')}
-                </p>
-              </div>
+          {/* Mobile card list */}
+          <div className="lg:hidden space-y-0 divide-y divide-gray-200">
+            {rows.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                Tidak ada data untuk periode ini
+              </p>
             )}
+            {rows.map((r, i) => (
+              <div
+                key={i}
+                className="animate-card-in py-3 px-1"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground">
+                    {format(new Date(r.date), 'dd MMM yyyy', { locale: idLocale })}
+                  </span>
+                  <span className={`text-sm font-semibold tabular-nums ${accent.text}`}>
+                    Rp {r.amount.toLocaleString('id-ID')}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{r.description}</p>
+              </div>
+            ))}
           </div>
+
+          {rows.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3 text-center animate-chip-in">
+              {rows.length} transaksi ditampilkan
+            </p>
+          )}
         </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-section-in">
+          <div className={`flex h-16 w-16 items-center justify-center rounded-2xl ${accent.emptyBg} mb-4`}>
+            <TitleIcon className="h-8 w-8" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Atur filter lalu tekan <span className="font-medium text-foreground">Terapkan</span> untuk melihat laporan.
+          </p>
+        </div>
       )}
     </div>
   )
 }
-

@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,8 @@ const lineShape = (categoryId, description, amount, categoryName = '') => ({
   category_name: categoryName,
 })
 
+const PAYMENT_TOGGLE_OPTIONS = ['QRIS', 'CASH']
+
 export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess }) {
   const [categories, setCategories] = useState([])
   const [paymentMethods, setPaymentMethods] = useState([])
@@ -41,6 +44,12 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
   const [currentCategoryId, setCurrentCategoryId] = useState('')
   const [currentDescription, setCurrentDescription] = useState('')
   const [currentAmount, setCurrentAmount] = useState('')
+  const paymentMethodByName = Object.fromEntries(
+    paymentMethods.map((pm) => [String(pm.name ?? '').trim().toUpperCase(), pm.id])
+  )
+  const selectedPaymentName = PAYMENT_TOGGLE_OPTIONS.find(
+    (name) => paymentMethodByName[name] === paymentMethodId
+  ) ?? ''
 
   useEffect(() => {
     if (open) {
@@ -81,6 +90,12 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
       }
     }
   }, [open, editingRow, categories, currentCategoryId])
+
+  useEffect(() => {
+    if (!open || paymentMethodId) return
+    const fallbackId = paymentMethodByName.QRIS ?? paymentMethodByName.CASH ?? ''
+    if (fallbackId) setPaymentMethodId(fallbackId)
+  }, [open, paymentMethodId, paymentMethodByName])
 
   async function loadCategories() {
     setLoadingCategories(true)
@@ -198,18 +213,32 @@ export function PurchaseEntryDialog({ open, onOpenChange, editingRow, onSuccess 
                 onChange={(e) => setTransactionDate(e.target.value)}
                 className="flex-1 min-w-[140px] text-sm pl-2 pr-8 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:ml-0 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
-              <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                <SelectTrigger className="flex-1 min-w-0">
-                  <SelectValue placeholder="Bayar pakai ?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((pm) => (
-                    <SelectItem key={pm.id} value={pm.id}>
-                      {pm.name}
-                    </SelectItem>
+              <div className="flex-1 min-w-0">
+                <ToggleGroup
+                  type="single"
+                  value={selectedPaymentName}
+                  onValueChange={(value) => {
+                    const id = paymentMethodByName[value]
+                    if (id) setPaymentMethodId(id)
+                  }}
+                  variant="outline"
+                  spacing={2}
+                  size="lg"
+                  className="w-full"
+                >
+                  {PAYMENT_TOGGLE_OPTIONS.map((name) => (
+                    <ToggleGroupItem
+                      key={name}
+                      value={name}
+                      disabled={!paymentMethodByName[name]}
+                      className="flex-1 rounded-xl text-xs data-[state=on]:font-bold"
+                      aria-label={name}
+                    >
+                      {name}
+                    </ToggleGroupItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </ToggleGroup>
+              </div>
             </div>
 
             {isEdit ? (

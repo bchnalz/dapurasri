@@ -32,19 +32,19 @@ const PAGE_SIZE = 10
 const STATUS_CONFIG = {
   pending: {
     label: 'Menunggu',
-    className: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200',
+    className: 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/30',
   },
   proses: {
     label: 'Diproses',
-    className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+    className: 'bg-sky-100 text-sky-800 ring-1 ring-sky-300 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-400/30',
   },
   selesai: {
     label: 'Selesai',
-    className: 'bg-green-50 text-green-700 ring-1 ring-green-200',
+    className: 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/30',
   },
   batal: {
     label: 'Dibatalkan',
-    className: 'bg-red-50 text-red-700 ring-1 ring-red-200',
+    className: 'bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/30',
   },
 }
 
@@ -294,7 +294,7 @@ export default function Orders() {
   return (
     <div>
       {/* Sticky header */}
-      <div className="sticky -top-3 md:-top-5 z-10 pb-3 -mx-3 md:-mx-5 px-3 md:px-5 -mt-3 md:-mt-5 pt-3 md:pt-5 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm">
+      <div className="sticky -top-3 md:-top-5 z-10 pb-3 -mx-3 md:-mx-5 px-3 md:px-5 -mt-3 md:-mt-5 pt-3 md:pt-5 bg-background/85 backdrop-blur-xl border-b border-border shadow-sm">
         <h2 className="text-base font-semibold text-center mb-1">Pesanan</h2>
 
         {/* Desktop add button */}
@@ -477,7 +477,7 @@ export default function Orders() {
                               onClick={() => addOrderToTransaction(order)}
                               aria-label="Masuk transaksi"
                               title="Masuk transaksi"
-                              className="h-8 w-8 text-green-700 hover:text-green-700 transition-colors duration-150"
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-400 transition-colors duration-150"
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>

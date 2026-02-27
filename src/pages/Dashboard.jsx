@@ -12,9 +12,23 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [monthlySummaries, setMonthlySummaries] = useState([])
   const [expandedMonth, setExpandedMonth] = useState(format(new Date(), 'yyyy-MM'))
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    if (typeof document === 'undefined') return false
+    return document.documentElement.classList.contains('dark')
+  })
 
   useEffect(() => {
     loadStats()
+  }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    const syncTheme = () => setIsDarkTheme(root.classList.contains('dark'))
+    syncTheme()
+    const observer = new MutationObserver(syncTheme)
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [])
 
   function toLocalDateString(d) {
@@ -146,7 +160,11 @@ export default function Dashboard() {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex flex-col items-center pt-6 pb-8">
-        <img src="/logo-dapurasri.png" alt="Dapurasri" className="h-20 mb-3 drop-shadow-sm" />
+        <img
+          src={isDarkTheme ? '/logo-dapurasri-dark.png' : '/logo-dapurasri.png'}
+          alt="Dapurasri"
+          className="h-20 mb-3 drop-shadow-sm"
+        />
         <p className="text-xs tracking-widest uppercase text-muted-foreground">Ringkasan Bulanan</p>
       </div>
 
@@ -165,10 +183,10 @@ export default function Dashboard() {
               <Card
                 key={m.monthKey}
                 className={cn(
-                  'transition-all duration-300 ease-out cursor-pointer border',
+                  'transition-all duration-300 ease-out cursor-pointer',
                   isCurrentMonth
-                    ? 'bg-[#FEFFD3] border-[#e8e6a0] shadow-lg'
-                    : 'border-transparent hover:shadow-md',
+                    ? 'border-primary/35 bg-primary/10 shadow-lg dark:border-primary/45 dark:bg-primary/12'
+                    : 'border-border/70 bg-card hover:shadow-md',
                   isExpanded && 'shadow-lg'
                 )}
                 onClick={() => setExpandedMonth(isExpanded ? null : m.monthKey)}
@@ -214,7 +232,7 @@ export default function Dashboard() {
                       </p>
                       <p className={cn(
                         'text-sm font-semibold',
-                        profit >= 0 ? 'text-emerald-600' : 'text-red-500'
+                        profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                       )}>
                         {fmtRp(profit)}
                       </p>

@@ -43,7 +43,6 @@ export default function Login() {
         toast.error(msg)
         return
       }
-      toast.success('Berhasil masuk')
       navigate(from, { replace: true })
     } finally {
       setLoading(false)

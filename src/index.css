@@ -33,11 +33,50 @@
   --color-accent-foreground: hsl(168 60% 18%);
   --color-destructive: hsl(0 72% 48%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: transparent;
+  --color-border: hsl(168 20% 88%);
   --color-input: hsl(168 20% 90%);
   --color-ring: hsl(168 76% 36%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(180 15% 15%);
+  --color-table-header: hsl(168 45% 92%);
+  --color-table-header-foreground: hsl(168 60% 20%);
+  --color-table-row-hover: hsl(168 30% 96%);
+  --color-table-line: hsl(168 20% 86%);
+}
+
+.dark {
+  /* Dark brown style */
+  --color-background: hsl(24 20% 10%);
+  --color-foreground: hsl(34 28% 90%);
+
+  --color-sidebar: hsl(24 24% 13%);
+  --color-sidebar-foreground: hsl(34 26% 90%);
+
+  --color-card: hsl(24 22% 14%);
+  --color-card-foreground: hsl(34 28% 90%);
+
+  --color-primary: hsl(29 52% 44%);
+  --color-primary-foreground: hsl(32 30% 96%);
+  --color-secondary: hsl(24 16% 22%);
+  --color-secondary-foreground: hsl(34 26% 90%);
+  --color-muted: hsl(24 14% 18%);
+  --color-muted-foreground: hsl(31 14% 68%);
+  --color-accent: hsl(24 18% 24%);
+  --color-accent-foreground: hsl(34 24% 92%);
+
+  --color-destructive: hsl(0 72% 58%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(24 12% 28%);
+  --color-input: hsl(24 12% 22%);
+  --color-ring: hsl(29 52% 44%);
+  --color-popover: hsl(24 22% 14%);
+  --color-popover-foreground: hsl(34 28% 90%);
+
+  --color-table-header: hsl(24 18% 20%);
+  --color-table-header-foreground: hsl(34 28% 90%);
+  --color-table-row-hover: hsl(24 16% 18%);
+  --color-table-line: hsl(24 12% 26%);
 }
 
 html {
@@ -63,11 +102,16 @@ body {
 
 /* Themed table headers */
 [data-theme-table] thead tr {
-  background: hsl(168 45% 92%);
-  color: hsl(168 60% 20%);
+  background: var(--color-table-header);
+  color: var(--color-table-header-foreground);
+}
+[data-theme-table] th,
+[data-theme-table] td,
+[data-theme-table] tr {
+  border-color: var(--color-table-line);
 }
 [data-theme-table] tbody tr:hover {
-  background: hsl(168 30% 96%);
+  background: var(--color-table-row-hover);
 }
 
 /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */

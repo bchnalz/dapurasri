@@ -160,7 +160,7 @@ export function TransactionList({
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky -top-3 md:-top-5 z-10 pb-3 -mx-3 md:-mx-5 px-3 md:px-5 -mt-3 md:-mt-5 pt-3 md:pt-5 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm">
+      <div className="sticky -top-3 md:-top-5 z-10 pb-3 -mx-3 md:-mx-5 px-3 md:px-5 -mt-3 md:-mt-5 pt-3 md:pt-5 bg-background/85 backdrop-blur-xl border-b border-border shadow-sm">
         <h2 className="text-base font-semibold text-center mb-1">Transaksi</h2>
 
         {/* Desktop action buttons */}
@@ -196,12 +196,12 @@ export function TransactionList({
         <div className="flex items-center justify-center gap-6 mt-1">
           <div className="text-center">
             <p className="text-[11px] text-muted-foreground">Pemasukan</p>
-            <p className="text-base font-bold text-green-700">+ Rp {animatedSales.toLocaleString('id-ID')}</p>
+            <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">+ Rp {animatedSales.toLocaleString('id-ID')}</p>
           </div>
-          <div className="h-8 w-px bg-gray-200" />
+          <div className="h-8 w-px bg-border" />
           <div className="text-center">
             <p className="text-[11px] text-muted-foreground">Pengeluaran</p>
-            <p className="text-base font-bold text-red-700">- Rp {animatedPurchases.toLocaleString('id-ID')}</p>
+            <p className="text-base font-bold text-rose-600 dark:text-rose-400">- Rp {animatedPurchases.toLocaleString('id-ID')}</p>
           </div>
         </div>
       </div>
@@ -238,7 +238,7 @@ export function TransactionList({
                 key={`${row._type}-${row.id}`}
                 className="border-b last:border-0 transition-colors hover:bg-muted/30"
               >
-                <td className={`w-1 p-0 ${isSales(row) ? 'bg-green-500' : 'bg-red-500'}`} />
+                <td className={`w-1 p-0 ${isSales(row) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'}`} />
                 <td className="p-2 whitespace-nowrap">
                   {format(new Date(row.transaction_date), 'dd MMM yyyy', { locale: id })}
                 </td>
@@ -248,7 +248,7 @@ export function TransactionList({
                 <td className="p-2">
                   {category(row)}
                 </td>
-                <td className={`p-2 text-right whitespace-nowrap font-medium ${isSales(row) ? 'text-green-700' : 'text-red-700'}`}>
+                <td className={`p-2 text-right whitespace-nowrap font-medium ${isSales(row) ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {isSales(row) ? '+ ' : '- '}Rp {row._amount.toLocaleString('id-ID')}
                 </td>
                 <td className="p-2 flex justify-end">
@@ -269,7 +269,7 @@ export function TransactionList({
       </div>
 
       {/* Mobile list */}
-      <div className="lg:hidden divide-y divide-gray-200 overflow-hidden">
+      <div className="lg:hidden divide-y divide-border/70 overflow-hidden">
         {merged.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-6">Belum ada data</p>
         )}
@@ -285,7 +285,7 @@ export function TransactionList({
               <span className="text-[11px] text-muted-foreground shrink-0">
                 {format(new Date(row.transaction_date), 'dd MMM yyyy', { locale: id })}
               </span>
-              <span className={`text-sm font-semibold shrink-0 ${isSales(row) ? 'text-green-700' : 'text-red-700'}`}>
+              <span className={`text-sm font-semibold shrink-0 ${isSales(row) ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                 {isSales(row) ? '+ ' : '- '}Rp {row._amount.toLocaleString('id-ID')}
               </span>
             </div>

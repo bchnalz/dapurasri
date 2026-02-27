@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ const lineShape = (productId, quantity, unitPrice, productName, unit) => ({
   unit: unit ?? '',
 })
 
+const PAYMENT_TOGGLE_OPTIONS = ['QRIS', 'CASH']
+
 export function SalesEntryDialog({ open, onOpenChange, editingTransaction, returnPayload, onConsumeReturnPayload, onSuccess }) {
   const [products, setProducts] = useState([])
   const [paymentMethods, setPaymentMethods] = useState([])
@@ -45,7 +48,12 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
 
   const currentProduct = products.find((p) => p.id === currentProductId)
   const currentUnitPrice = currentProduct ? Number(currentProduct.price) : 0
-  const currentSubtotal = currentUnitPrice * (Number(currentQuantity) || 0)
+  const paymentMethodByName = Object.fromEntries(
+    paymentMethods.map((pm) => [String(pm.name ?? '').trim().toUpperCase(), pm.id])
+  )
+  const selectedPaymentName = PAYMENT_TOGGLE_OPTIONS.find(
+    (name) => paymentMethodByName[name] === paymentMethodId
+  ) ?? ''
 
   useEffect(() => {
     if (open) {
@@ -69,6 +77,12 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
       setCurrentQuantity(1)
     }
   }, [open, editingTransaction?.id])
+
+  useEffect(() => {
+    if (!open || paymentMethodId) return
+    const fallbackId = paymentMethodByName.QRIS ?? paymentMethodByName.CASH ?? ''
+    if (fallbackId) setPaymentMethodId(fallbackId)
+  }, [open, paymentMethodId, paymentMethodByName])
 
   async function loadProducts() {
     setLoadingProducts(true)
@@ -129,6 +143,13 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
     setLines((prev) => prev.filter((_, i) => i !== index))
   }
 
+  function adjustCurrentQuantity(delta) {
+    setCurrentQuantity((prev) => {
+      const next = (Number(prev) || 0) + delta
+      return next < 0 ? 0 : next
+    })
+  }
+
   const total = lines.reduce(
     (sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0),
     0
@@ -154,38 +175,61 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
                 value={transactionDate}
                 onChange={setTransactionDate}
                 placeholder="Pilih tanggal"
-                className="flex-1 min-w-[140px]"
+                className="h-9 flex-1 min-w-[140px]"
               />
-              <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                <SelectTrigger className="flex-1 min-w-0">
-                  <SelectValue placeholder="Bayar pakai ?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((pm) => (
-                    <SelectItem key={pm.id} value={pm.id}>
-                      {pm.name}
-                    </SelectItem>
+              <div className="flex-1 min-w-0">
+                <ToggleGroup
+                  type="single"
+                  value={selectedPaymentName}
+                  onValueChange={(value) => {
+                    const id = paymentMethodByName[value]
+                    if (id) setPaymentMethodId(id)
+                  }}
+                  variant="outline"
+                  spacing={1}
+                  size="default"
+                  className="w-full"
+                >
+                  {PAYMENT_TOGGLE_OPTIONS.map((name) => (
+                    <ToggleGroupItem
+                      key={name}
+                      value={name}
+                      disabled={!paymentMethodByName[name]}
+                      className="h-9 flex-1 text-xs data-[state=on]:font-bold"
+                      aria-label={name}
+                    >
+                      {name}
+                    </ToggleGroupItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </ToggleGroup>
+              </div>
             </div>
 
             <div className="space-y-1">
               <div className="space-y-1">
                 <Label>Tambah barang</Label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Select value={currentProductId} onValueChange={setCurrentProductId}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Pilih produk" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} – Rp {Number(p.price).toLocaleString('id-ID')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select value={currentProductId} onValueChange={setCurrentProductId}>
+                  <SelectTrigger className="h-9 w-[200px]">
+                    <SelectValue placeholder="Pilih produk" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} – Rp {Number(p.price).toLocaleString('id-ID')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="inline-flex h-9 items-center overflow-hidden rounded-md border border-input bg-background">
+                  <button
+                    type="button"
+                    className="h-full w-8 text-muted-foreground transition-colors hover:bg-accent"
+                    onClick={() => adjustCurrentQuantity(-1)}
+                    aria-label="Kurangi jumlah"
+                  >
+                    -
+                  </button>
                   <Input
                     type="number"
                     inputMode="decimal"
@@ -194,23 +238,34 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
                     value={currentQuantity}
                     onChange={(e) => setCurrentQuantity(e.target.value)}
                     onFocus={(e) => e.target.select()}
-                    className="w-20"
-                    placeholder="Qty"
+                    className="h-full w-12 rounded-none border-0 bg-transparent px-0 text-center [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus-visible:ring-0"
+                    placeholder="0"
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addItem}
-                    disabled={!currentProductId || Number(currentQuantity) <= 0}
+                    className="h-full w-8 text-muted-foreground transition-colors hover:bg-accent"
+                    onClick={() => adjustCurrentQuantity(1)}
+                    aria-label="Tambah jumlah"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Tambah
-                  </Button>
+                    +
+                  </button>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 shrink-0"
+                  onClick={addItem}
+                  disabled={!currentProductId || Number(currentQuantity) <= 0}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Tambah
+                </Button>
               </div>
-              <div className="space-y-1">
-                <Label>Daftar barang</Label>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Daftar barang</Label>
               {loadingDetails ? (
                 <div className="flex justify-center py-4">
                   <LoadingSpinner />
@@ -262,27 +317,27 @@ export function SalesEntryDialog({ open, onOpenChange, editingTransaction, retur
                   )}
                 </div>
               )}
-              </div>
             </div>
 
             <div className="flex items-center justify-between rounded-xl bg-green-50 px-4 py-3">
               <span className="text-sm text-green-800">Total</span>
               <span className="text-base font-bold text-green-700">Rp {total.toLocaleString('id-ID')}</span>
             </div>
+            </div>
           </>
         )}
         <DialogFooter className="flex flex-row w-full gap-2">
-          <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" className="h-9 flex-1" onClick={() => onOpenChange(false)}>
             Batal
           </Button>
           <Button
             type="button"
-            className="flex-1"
+            className="h-9 flex-1"
             onClick={() =>
               onSuccess?.({
                 transactionDate,
                 paymentMethodId: paymentMethodId || null,
-                paymentMethodName: paymentMethods.find((p) => p.id === paymentMethodId)?.name ?? '',
+                paymentMethodName: selectedPaymentName,
                 lines,
                 total,
                 editingTransaction,

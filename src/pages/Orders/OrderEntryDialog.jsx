@@ -516,7 +516,7 @@ export function OrderEntryDialog({
                             {line.product_name}
                           </td>
                           <td className="p-2 text-right tabular-nums">
-                            {line.quantity} {line.unit}
+                            {line.quantity}
                           </td>
                           <td className="p-2 text-right tabular-nums font-medium whitespace-nowrap">
                             Rp{' '}

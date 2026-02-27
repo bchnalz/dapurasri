@@ -1,8 +1,25 @@
+import { useEffect, useState } from 'react'
 import { Toaster as Sonner } from 'sonner'
 
 function Toaster(props) {
+  const [theme, setTheme] = useState(() => {
+    if (typeof document === 'undefined') return 'light'
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined
+    const root = document.documentElement
+    const syncTheme = () => setTheme(root.classList.contains('dark') ? 'dark' : 'light')
+    syncTheme()
+    const observer = new MutationObserver(syncTheme)
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <Sonner
+      theme={theme}
       className="toaster group"
       toastOptions={{
         classNames: {

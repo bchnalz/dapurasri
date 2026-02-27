@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,8 @@ const lineShape = (productId, quantity, unitPrice, productName, unit) => ({
   unit: unit ?? '',
 })
 
+const PAYMENT_TOGGLE_OPTIONS = ['QRIS', 'CASH']
+
 export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsumeReturnPayload, onSuccess }) {
   const [products, setProducts] = useState([])
   const [paymentMethods, setPaymentMethods] = useState([])
@@ -45,6 +48,12 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
 
   const currentProduct = products.find((p) => p.id === currentProductId)
   const currentUnitPrice = currentProduct ? Number(currentProduct.price) : 0
+  const paymentMethodByName = Object.fromEntries(
+    paymentMethods.map((pm) => [String(pm.name ?? '').trim().toUpperCase(), pm.id])
+  )
+  const selectedPaymentName = PAYMENT_TOGGLE_OPTIONS.find(
+    (name) => paymentMethodByName[name] === paymentMethodId
+  ) ?? ''
 
   useEffect(() => {
     if (open) {
@@ -64,6 +73,12 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
       setCurrentQuantity(1)
     }
   }, [open])
+
+  useEffect(() => {
+    if (!open || paymentMethodId) return
+    const fallbackId = paymentMethodByName.QRIS ?? paymentMethodByName.CASH ?? ''
+    if (fallbackId) setPaymentMethodId(fallbackId)
+  }, [open, paymentMethodId, paymentMethodByName])
 
   async function loadProducts() {
     setLoadingProducts(true)
@@ -110,6 +125,13 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
     )
   }
 
+  function adjustCurrentQuantity(delta) {
+    setCurrentQuantity((prev) => {
+      const next = (Number(prev) || 0) + delta
+      return next < 0 ? 0 : next
+    })
+  }
+
   const total = lines.reduce(
     (sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.custom_price) || 0),
     0
@@ -135,18 +157,32 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
                 placeholder="Pilih tanggal"
                 className="flex-1 min-w-[140px]"
               />
-              <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                <SelectTrigger className="flex-1 min-w-0">
-                  <SelectValue placeholder="Bayar pakai ?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((pm) => (
-                    <SelectItem key={pm.id} value={pm.id}>
-                      {pm.name}
-                    </SelectItem>
+              <div className="flex-1 min-w-0">
+                <ToggleGroup
+                  type="single"
+                  value={selectedPaymentName}
+                  onValueChange={(value) => {
+                    const id = paymentMethodByName[value]
+                    if (id) setPaymentMethodId(id)
+                  }}
+                  variant="outline"
+                  spacing={2}
+                  size="lg"
+                  className="w-full"
+                >
+                  {PAYMENT_TOGGLE_OPTIONS.map((name) => (
+                    <ToggleGroupItem
+                      key={name}
+                      value={name}
+                      disabled={!paymentMethodByName[name]}
+                      className="flex-1 rounded-xl text-xs data-[state=on]:font-bold"
+                      aria-label={name}
+                    >
+                      {name}
+                    </ToggleGroupItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </ToggleGroup>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -165,17 +201,35 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    step="1"
-                    min="0"
-                    value={currentQuantity}
-                    onChange={(e) => setCurrentQuantity(e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    className="w-20"
-                    placeholder="Qty"
-                  />
+                  <div className="inline-flex h-9 items-center overflow-hidden rounded-md border-2 border-primary/30 bg-card">
+                    <button
+                      type="button"
+                      className="h-full w-8 text-muted-foreground transition-colors hover:bg-accent"
+                      onClick={() => adjustCurrentQuantity(-1)}
+                      aria-label="Kurangi jumlah"
+                    >
+                      -
+                    </button>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="1"
+                      min="0"
+                      value={currentQuantity}
+                      onChange={(e) => setCurrentQuantity(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      className="h-full w-12 rounded-none border-0 bg-transparent px-0 text-center [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus-visible:ring-0"
+                      placeholder="0"
+                    />
+                    <button
+                      type="button"
+                      className="h-full w-8 text-muted-foreground transition-colors hover:bg-accent"
+                      onClick={() => adjustCurrentQuantity(1)}
+                      aria-label="Tambah jumlah"
+                    >
+                      +
+                    </button>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -271,7 +325,7 @@ export function CustomInvoiceDialog({ open, onOpenChange, returnPayload, onConsu
               onSuccess?.({
                 transactionDate,
                 paymentMethodId: paymentMethodId || null,
-                paymentMethodName: paymentMethods.find((p) => p.id === paymentMethodId)?.name ?? '',
+                paymentMethodName: selectedPaymentName,
                 lines,
                 total,
                 isCustomInvoice: true,

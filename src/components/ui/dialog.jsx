@@ -40,7 +40,7 @@ function DialogContent({ className, compact, children, ...props }) {
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl shadow-2xl sm:max-w-lg',
+          'bg-popover text-popover-foreground border border-border fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl shadow-2xl sm:max-w-lg',
           'max-h-[90vh] overflow-y-auto',
           compact ? 'p-3' : 'p-5',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',

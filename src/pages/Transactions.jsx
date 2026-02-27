@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Copy, TrendingUp, TrendingDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -11,6 +12,8 @@ import { PurchaseDetailDialog } from './Transactions/PurchaseDetailDialog'
 import { CustomInvoiceDialog } from './Transactions/CustomInvoiceDialog'
 
 export default function Transactions() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [refreshKey, setRefreshKey] = useState(0)
   const [salesEntryOpen, setSalesEntryOpen] = useState(false)
   const [salesPreviewOpen, setSalesPreviewOpen] = useState(false)
@@ -26,6 +29,19 @@ export default function Transactions() {
   const [fabOpen, setFabOpen] = useState(false)
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  useEffect(() => {
+    const prefill = location.state?.salesPrefillFromOrder
+    if (!prefill) return
+
+    setSalesPreviewOpen(false)
+    setSalesPreviewPayload(null)
+    setEditingSales(null)
+    setSalesReturnPayload(prefill)
+    setSalesEntryOpen(true)
+
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   function openNewSales() {
     setEditingSales(null)

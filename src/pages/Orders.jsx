@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,6 +80,7 @@ function useAnimatedNumber(target, duration = 500) {
 }
 
 export default function Orders() {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -98,7 +100,7 @@ export default function Orders() {
     const { data, error } = await supabase
       .from('orders')
       .select(
-        '*, customers(name), order_items(product_name, quantity, unit_price)'
+        '*, customers(name), order_items(product_id, product_name, quantity, unit_price, unit)'
       )
       .order('created_at', { ascending: false })
 
@@ -195,6 +197,66 @@ export default function Orders() {
       (sum, item) => sum + Number(item.quantity),
       0
     )
+  }
+
+  function buildSalesPayloadFromOrder(order) {
+    const orderItems = order?.order_items ?? []
+    if (!orderItems.length) return null
+
+    const mergedByProduct = new Map()
+    for (const item of orderItems) {
+      if (!item.product_id) continue
+      const key = item.product_id
+      const prev = mergedByProduct.get(key)
+      const qty = Number(item.quantity) || 0
+      const price = Number(item.unit_price) || 0
+      if (prev) {
+        mergedByProduct.set(key, {
+          ...prev,
+          quantity: prev.quantity + qty,
+        })
+      } else {
+        mergedByProduct.set(key, {
+          product_id: key,
+          product_name: item.product_name ?? '',
+          quantity: qty,
+          unit_price: price,
+          unit: item.unit ?? '',
+        })
+      }
+    }
+
+    const lines = [...mergedByProduct.values()].filter((line) => line.quantity > 0)
+    if (!lines.length) return null
+
+    const total = lines.reduce(
+      (sum, line) => sum + Number(line.quantity) * Number(line.unit_price),
+      0
+    )
+
+    return {
+      transactionDate: new Date().toISOString().split('T')[0],
+      paymentMethodId: '',
+      lines,
+      total,
+      sourceOrderId: order.id,
+      sourceOrderNumber: order.order_number ?? '',
+    }
+  }
+
+  function addOrderToTransaction(order) {
+    const payload = buildSalesPayloadFromOrder(order)
+    if (!payload) {
+      toast.error('Pesanan tidak memiliki item valid untuk transaksi')
+      return
+    }
+
+    navigate('/transactions', {
+      state: {
+        salesPrefillFromOrder: payload,
+        salesPrefillNonce: Date.now(),
+      },
+    })
   }
 
   function openCreate() {
@@ -408,6 +470,16 @@ export default function Orders() {
                               className="h-8 w-8 transition-colors duration-150"
                             >
                               <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => addOrderToTransaction(order)}
+                              aria-label="Masuk transaksi"
+                              title="Masuk transaksi"
+                              className="h-8 w-8 text-green-700 hover:text-green-700 transition-colors duration-150"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -749,6 +821,19 @@ export default function Orders() {
 
                   {/* Action buttons in detail */}
                   <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 transition-colors duration-150"
+                      onClick={() => {
+                        const target = detailOrder
+                        setDetailOrder(null)
+                        addOrderToTransaction(target)
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      Masuk Transaksi
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"

@@ -1,0 +1,31 @@
+---
+description: Card component styling standards
+globs: **/*.jsx
+alwaysApply: false
+---
+
+# Card Styling Standards
+
+When creating card components in this project, use these compact styles:
+
+## Card Container
+- **Width**: `max-w-[16rem]` (compact)
+- **Padding**: `px-3 py-2` (reduced vertical padding)
+- **Border**: `rounded-xl border bg-card`
+- **Spacing**: `space-y-2` for internal sections
+
+## Example
+
+```jsx
+<div className="max-w-[16rem]">
+  <div className="rounded-xl border bg-card px-3 py-2 space-y-2">
+    {/* Card content */}
+  </div>
+</div>
+```
+
+## Guidelines
+- Keep cards compact with minimal padding
+- Use `space-y-2` for tight vertical rhythm
+- Prefer `text-sm` for card content
+- Use `text-muted-foreground` for labels

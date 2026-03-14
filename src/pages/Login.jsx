@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
+import { isSupabaseConfigured, supabaseConfigError } from '@/lib/supabase'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -125,11 +126,20 @@ export default function Login() {
                 </div>
               )}
 
+              {!isSupabaseConfigured && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+                >
+                  {supabaseConfigError}. Add both values in <code>.env.local</code>, then restart dev server.
+                </div>
+              )}
+
               <Button
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || !isSupabaseConfigured}
               >
                 {loading ? (
                   <>

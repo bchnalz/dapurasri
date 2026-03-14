@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase, supabaseConfigError } from '@/lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -8,6 +8,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false)
+      return
+    }
+
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
       setLoading(false)
@@ -25,8 +30,14 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     loading,
-    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-    signOut: () => supabase.auth.signOut(),
+    signIn: (email, password) =>
+      isSupabaseConfigured
+        ? supabase.auth.signInWithPassword({ email, password })
+        : Promise.resolve({ data: { user: null, session: null }, error: new Error(supabaseConfigError) }),
+    signOut: () =>
+      isSupabaseConfigured
+        ? supabase.auth.signOut()
+        : Promise.resolve({ error: new Error(supabaseConfigError) }),
   }
 
   return (
